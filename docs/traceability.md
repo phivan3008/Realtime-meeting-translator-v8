@@ -77,9 +77,9 @@ accepted_exception
 | UI-090 | Translation shows a pending state between final ASR and Qwen returning | - | - | - | - | - | planned | - |
 | UI-100 | A translation error never removes or alters the final transcript | - | - | - | - | - | planned | - |
 | UI-110 | A retry action may retry failed translation without re-running ASR | - | - | - | - | - | planned | - |
-| UI-120 | Project records by `segment_id` using the Section 25 revision model; ignore and log duplicate and stale events | - | - | - | - | - | planned | - |
-| UI-130 | A speaker-only revision must not replace newer text, language or translation state | - | - | - | - | - | planned | - |
-| UI-140 | Never append every partial as a new permanent line | - | - | - | - | - | planned | - |
+| UI-120 | Project records by `segment_id` using the Section 25 revision model; ignore and log duplicate and stale events | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | client uses the shared reducer, not its own projection (D13) |
+| UI-130 | A speaker-only revision must not replace newer text, language or translation state | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| UI-140 | Never append every partial as a new permanent line | ADR-0008 | - | - | - | - | planned | one row per segment from first partial to seal, through splits and merges |
 | UI-150 | Degraded mode start and end are visible in the UI | - | - | - | - | - | planned | - |
 
 ## PROT - protocol, timeline, identity, revisions
@@ -95,35 +95,35 @@ accepted_exception
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
 | PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | - | - | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
 | PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | - | - | - | - | - | planned | - |
-| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | - | - | - | - | - | planned | - |
-| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | - | - | - | - | - | planned | - |
+| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0008 | - | - | - | - | planned | must carry an absolute int64 start_sample (D9); layout at the G3 gate |
+| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0008 | - | - | - | - | planned | layout still open; the field set is fixed by ADR-0008 |
 | PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | - | - | - | - | - | planned | - |
 | PROT-130 | No component creates an unbounded queue | - | - | - | - | - | planned | - |
-| PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | - | - | - | - | - | planned | - |
-| PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | - | - | - | - | - | planned | - |
-| PROT-160 | Floating-point seconds are never identity keys or ordering authorities | - | - | - | - | - | planned | - |
-| PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | - | - | - | - | - | planned | - |
-| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | - | - | - | - | - | planned | - |
-| PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | - | - | - | - | - | planned | - |
-| PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | - | - | - | - | - | planned | - |
-| PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | - | - | - | - | - | planned | - |
-| PROT-220 | The session orchestrator is the sole authority creating `utterance_id` and `segment_id` | - | - | - | - | - | planned | - |
-| PROT-230 | Whisper subsegment and token-timestamp local IDs never become public `segment_id` values | - | - | - | - | - | planned | - |
-| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | - | - | - | - | - | planned | - |
-| PROT-250 | A revision retains the same `segment_id`; a new `segment_id` is created only when a split cannot be represented as a revision | - | - | - | - | - | planned | - |
-| PROT-260 | Every current segment projection carries `content_revision`, `language_revision`, `speaker_revision`, `translation_revision`, `translated_from_content_revision`, `translated_from_language_revision` | - | - | - | - | - | planned | - |
-| PROT-270 | Revision dependency rules: content change invalidates translation; language change invalidates translation and requires revalidation; speaker-only change does not | - | - | - | - | - | planned | - |
-| PROT-280 | Replaying the same event is idempotent by `event_id` | - | - | - | - | - | planned | - |
-| PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | - | - | - | - | - | planned | - |
+| PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 sample offset at 16 kHz, origin 0 at session start |
+| PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | floor(sample * 1000 / 16000) |
+| PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | gap size measured from absolute start_sample, not inferred |
+| PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | stream-%04d, incremented on discontinuity |
+| PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 on the wire; JSON integers stay far below 2^53 |
+| PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-220 | The session orchestrator is the sole authority creating `utterance_id` and `segment_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | segment allocated eagerly when the utterance opens (D10) |
+| PROT-230 | Whisper subsegment and token-timestamp local IDs never become public `segment_id` values | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | operation: create | revise | split | merge | seal |
+| PROT-250 | A revision retains the same `segment_id`; a new `segment_id` is created only when a split cannot be represented as a revision | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | on split the original keeps its ID and narrows (D11) |
+| PROT-260 | Every current segment projection carries `content_revision`, `language_revision`, `speaker_revision`, `translation_revision`, `translated_from_content_revision`, `translated_from_language_revision` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-270 | Revision dependency rules: content change invalidates translation; language change invalidates translation and requires revalidation; speaker-only change does not | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | content or language invalidates translation; speaker never does |
+| PROT-280 | Replaying the same event is idempotent by `event_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | duplicate event_id returns a refusal, not an exception |
+| PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | integrity_conflict: refuse, log both payloads, pipeline.error, degrade (D12) |
 | PROT-300 | The protocol carries enough evidence for the client debug log to be a self-sufficient event source | ADR-0004 | - | - | - | - | planned | - |
-| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | - | - | - | - | - | planned | - |
-| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | - | - | - | - | - | planned | - |
+| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | projection table for every revision-bearing event is in the ADR |
+| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | gap_samples = next.start_sample - previous.frame_end_sample |
 | PROT-330 | Maximum frame and event sizes are defined and enforced | - | - | - | - | - | planned | - |
 | PROT-340 | Error codes and version compatibility rules are documented | - | - | - | - | - | planned | - |
 | PROT-350 | The exact resume contract is approved at the protocol design gate | - | - | - | - | - | planned | - |
-| PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | - | - | - | - | - | planned | - |
-| PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | - | - | - | - | - | planned | - |
-| PROT-380 | Stale asynchronous responses are persisted as diagnostics but never update current projection | - | - | - | - | - | planned | - |
+| PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-380 | Stale asynchronous responses are persisted as diagnostics but never update current projection | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | stale returns a refusal reason and is logged as a diagnostic |
 | PROT-400 | Schema validation for all control events and worker messages | - | - | - | - | - | planned | - |
 
 ## VAD - preprocessing and segmentation
@@ -233,8 +233,8 @@ accepted_exception
 | SPK-180 | Canonical anonymous speaker IDs are session-scoped, monotonically allocated and never reused | - | - | - | - | - | planned | - |
 | SPK-190 | Merge events carry `operation`, `from_speaker_ids`, `to_speaker_id`, `speaker_revision` | - | - | - | - | - | planned | - |
 | SPK-200 | Merged IDs become aliases of the canonical target and remain in debug history | - | - | - | - | - | planned | - |
-| SPK-210 | Projection rewrites affected current segment views to the canonical ID without modifying content or translation revisions | - | - | - | - | - | planned | - |
-| SPK-220 | Split operations require new canonical IDs, explicit affected intervals and segments, and lineage | - | - | - | - | - | planned | - |
+| SPK-210 | Projection rewrites affected current segment views to the canonical ID without modifying content or translation revisions | ADR-0008 | - | - | - | - | planned | merge rewrites views to the canonical ID; content and translation revisions untouched |
+| SPK-220 | Split operations require new canonical IDs, explicit affected intervals and segments, and lineage | ADR-0008 | - | - | - | - | planned | - |
 | SPK-230 | Pyannote local labels are mapped to canonical IDs using temporal overlap, embedding similarity, duration and confidence | - | - | - | - | - | planned | - |
 | SPK-240 | The Pyannote Scheduling ADR decides rolling-window length and overlap, cadence and priority, maximum retrospective window, mapping confidence policy, reconciliation with SpeechBrain online clusters, split/merge thresholds and minimum evidence, and ambiguous-mapping behaviour | - | - | - | - | - | planned | pyannote/segmentation-3.0 native window is 10 s; powerset caps 3 speakers per window |
 | SPK-250 | Speaker and overlap accuracy metrics are reported only when annotation exists; until then only operational diagnostics | - | - | - | - | - | planned | - |
@@ -254,7 +254,7 @@ accepted_exception
 | TRN-080 | Translation states are `pending`, `completed`, `failed` | - | - | - | - | - | planned | - |
 | TRN-090 | A translation timeout or failure never invalidates final ASR | - | - | - | - | - | planned | - |
 | TRN-100 | Translation may be retried idempotently by segment ID | - | - | - | - | - | planned | - |
-| TRN-110 | A stale translation response for an older transcription revision is discarded | - | - | - | - | - | planned | - |
+| TRN-110 | A stale translation response for an older transcription revision is discarded | ADR-0008 | - | - | - | - | planned | translation.final refused as stale unless both echoed source revisions match |
 | TRN-120 | Qwen output is validated before display and persistence | - | - | - | - | - | planned | - |
 | TRN-130 | Translation context is a configurable A/B feature, disabled by default: bounded recent accepted non-rejected finals, in clearly separated fields, reference only, never translated or copied into output, excluding partial and low-confidence text; including prior translations is a separate default-off experiment | - | - | - | - | - | planned | - |
 | TRN-140 | Output validation rejects or retries: empty output for non-empty accepted source, reasoning tags or analysis text, Markdown fences or explanatory preamble, schema violations or extra fields, unexpected output language, implausible output/source length ratio, loss or alteration of protected numbers/dates/URLs/code/identifiers, stale source revisions | - | - | - | - | - | planned | - |
@@ -273,7 +273,7 @@ accepted_exception
 | PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | - | - | - | - | - | planned | - |
 | PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | - | - | - | - | - | planned | - |
 | PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | - | - | - | - | - | planned | - |
-| PERS-070 | A deterministic command rebuilds the history file from the debug event log | - | - | - | - | - | planned | - |
+| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0008 | - | - | - | - | planned | rebuild uses the same shared reducer as the UI and the compaction (D13) |
 | PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | - | - | - | - | - | planned | - |
 | PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | - | - | - | - | - | planned | - |
 | PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | - | - | - | - | - | planned | - |
@@ -309,14 +309,14 @@ accepted_exception
 | OPS-530 | All services use structured logs carrying session ID, stream ID, segment ID, event ID, revision, service and worker, monotonic processing timestamps and UTC correlation time | - | - | - | - | - | planned | - |
 | OPS-540 | Metrics exportable in Prometheus-compatible form where practical | - | - | - | - | - | planned | - |
 | OPS-550 | Sensitive audio and text excluded from normal operational logs unless debug content logging is explicitly enabled | - | - | - | - | - | planned | - |
-| OPS-600 | All tunable values externalized into validated configuration | - | - | - | - | - | planned | - |
+| OPS-600 | All tunable values externalized into validated configuration | - | - | - | - | - | planned | seal_window_samples is benchmark_required; config validation refuses to start without it |
 | OPS-610 | Every debug log and benchmark artifact includes a configuration hash | - | - | - | - | - | planned | - |
 | OPS-700 | Graceful stop executes the full sequence: reject frames after final sequence, close or reject incomplete gap ranges, flush the active VAD utterance, final-decode if minimum speech requirements are met, complete/retry/cancel translation within a bounded drain timeout, run bounded pending refinement, seal remaining segments, emit `session.summary`, emit `session.stopped`, close persistence projection atomically | - | - | - | - | - | planned | - |
 | OPS-710 | The Session Lifecycle ADR defines stop acknowledgement timeout, ASR flush timeout, translation drain timeout, refinement timeout, worker cancellation behaviour, client behaviour when `session.stopped` is not received, conditions for `completed` / `completed_with_warnings` / `failed`, and the recovery/compaction command after abrupt termination | - | - | - | - | - | planned | - |
 | OPS-720 | A server restart makes the active meeting unrecoverable; the client emits and persists `session_unrecoverable` and requires a new session | - | - | - | - | - | planned | - |
 | OPS-730 | The client never resends an entire meeting to a restarted server as if live continuity were preserved | - | - | - | - | - | planned | - |
 | OPS-740 | Gap policy is configurable by duration class — small: preserve the interval, optionally insert marked silence, attach gap evidence; medium: close the utterance as `truncated_by_gap`, reset VAD, require stricter ASR acceptance; large: invalidate resume continuity, reset VAD and ASR context, require explicit discontinuity or a new stream | - | - | - | - | - | planned | - |
-| OPS-750 | No implementation decodes across an unreported gap | - | - | - | - | - | planned | - |
+| OPS-750 | No implementation decodes across an unreported gap | ADR-0008 | - | - | - | - | planned | enforceable by assertion because gap size is measured, not inferred |
 | OPS-760 | A segment intersecting a gap is not translated unless its accepted final passes the gap-aware quality policy | - | - | - | - | - | planned | - |
 | OPS-800 | GPU admission implements the seven-level priority policy of Section 25.11 | - | - | - | - | - | planned | - |
 | OPS-810 | Final ASR is never starved by translation or retrospective work; partial jobs may be coalesced or skipped; final jobs are never dropped | - | - | - | - | - | planned | - |

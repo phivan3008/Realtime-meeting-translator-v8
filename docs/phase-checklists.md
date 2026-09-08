@@ -68,7 +68,7 @@ Gates to clear in dependency order. Each produces an ADR before any code.
 
 | # | Item | Gate | Done |
 |---|---|---|---|
-| 1.1 | Canonical sample timeline; utterance/segment/turn authority; segment lifecycle; independent revisions and projection rules | Section 26 item 17 | ☐ |
+| 1.1 | Canonical sample timeline; utterance/segment/turn authority; segment lifecycle; independent revisions and projection rules | Section 26 item 17 | ✅ ADR-0008 |
 | 1.2 | Gap duration classes; graceful stop, drain and seal; server-restart limitation | Section 26 item 18 | ☐ |
 | 1.3 | Binary WebSocket header, resume contract, backpressure, error codes, version compatibility | Section 26 item 3 | ☐ |
 | 1.4 | Log and event schema, retention | Section 26 item 14 | ☐ |
