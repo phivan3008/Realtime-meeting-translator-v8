@@ -23,9 +23,9 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 220 |
-| implemented | 48 |
-| tested | 18 |
+| planned | 217 |
+| implemented | 47 |
+| tested | 22 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
 | blocked_real_fixture | 5 |
@@ -33,7 +33,7 @@ accepted_exception
 | accepted_exception | 0 |
 | **total** | **291** |
 
-220 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+217 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
@@ -96,7 +96,7 @@ accepted_exception
 | PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py |
 | PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | protocol/ | - | - | - | implemented | frame duration is config-selected; benchmark pending |
 | PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0010 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_field_offsets_match_the_adr |
-| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/frame.py | tests/conformance/test_frame_codec.py | - | - | blocked_real_fixture | layout covered by category B vectors; Section 9.2 real-capture serialization needs a Phase 4 server run |
+| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/frame.py | tests/conformance/test_frame_codec.py | - | docs/protocol.md section 4.2 | blocked_real_fixture | layout covered by category B vectors; Section 9.2 real-capture serialization needs a Phase 4 server run |
 | PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | cumulative acked_through_sample doubles as the backpressure channel (D21, D22) |
 | PROT-130 | No component creates an unbounded queue | ADR-0010 | protocol/ | - | - | - | implemented | no unbounded container in protocol/ |
 | PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_timeline.py TestConversion, TestSampleOffsetValidation |
@@ -116,10 +116,10 @@ accepted_exception
 | PROT-280 | Replaying the same event is idempotent by `event_id` | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_projection.py TestIdempotency |
 | PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_equal_revision_different_payload_is_an_integrity_conflict |
 | PROT-300 | The protocol carries enough evidence for the client debug log to be a self-sufficient event source | ADR-0004 | - | - | - | - | planned | - |
-| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ | - | - | - | implemented | protocol/projection.py implements the ADR-0008 table |
+| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ | - | - | docs/protocol.md section 8.3 | implemented | protocol/projection.py implements the ADR-0008 table |
 | PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0009 | protocol/ | - | - | - | implemented | protocol/timeline.py measure_gap; emitter arrives in Phase 4 |
 | PROT-330 | Maximum frame and event sizes are defined and enforced | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py; frame limit tested, event limit not yet |
-| PROT-340 | Error codes and version compatibility rules are documented | ADR-0010 | protocol/ | - | - | - | implemented | protocol/errors.py, protocol/version.py |
+| PROT-340 | Error codes and version compatibility rules are documented | ADR-0010 | protocol/ | - | - | docs/protocol.md section 12 | implemented | protocol/errors.py, protocol/version.py |
 | PROT-350 | The exact resume contract is approved at the protocol design gate | ADR-0009 | - | - | - | - | planned | resume carries last_sent_sequence and last_sent_start_sample; server answers resume_from_sample (D17) |
 | PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ | - | - | - | implemented | one utterance_id per segment in the projection |
 | PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
@@ -286,8 +286,8 @@ accepted_exception
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
 | OPS-010 | Repository structure as decided at the repository design gate | ADR-0001 | repository tree | - | - | docs/adr/ADR-0001-repository-structure.md | implemented | - |
-| OPS-020 | `protocol/` carries no ML dependency | ADR-0001 | protocol/ | - | - | - | implemented | protocol/ imports nothing beyond pydantic and the stdlib |
-| OPS-030 | Cross-worker imports are forbidden and enforced by a conformance test | ADR-0001 | - | tests/conformance/ import boundary | - | - | planned | test written in Phase 1 |
+| OPS-020 | `protocol/` carries no ML dependency | ADR-0001 | protocol/ | tests/conformance/ | - | tests/conformance/, 168 passed 1 skipped, dev machine, 2026-09-08 | tested | test_import_boundaries.py: protocol/ imports only stdlib and pydantic |
+| OPS-030 | Cross-worker imports are forbidden and enforced by a conformance test | ADR-0001 | protocol/ | tests/conformance/ | - | tests/conformance/, 168 passed 1 skipped, dev machine, 2026-09-08 | tested | test_import_boundaries.py: no cross-worker import, detector self-tested |
 | OPS-040 | The server isolates gateway, orchestrator, asr-worker, speechbrain-worker, diarization-worker and translation-service; not all ML frameworks in one process | ADR-0007 | - | - | - | - | planned | 5 lazily created venvs; built from Phase 4 onward |
 | OPS-100 | One Git branch per phase, merged to `main` only after the phase report is approved | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | branch phase/00-repository-audit |
 | OPS-110 | Run the full repository inspection set before every commit | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | inspection set run before every commit |
@@ -330,7 +330,7 @@ accepted_exception
 | OPS-920 | No component silently substitutes lower-quality behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | server overload is visible via pipeline.warning and capability.updated |
 | OPS-1000 | All 22 design gates of Section 26 are discussed before the corresponding implementation | - | - | - | - | - | planned | - |
 | OPS-1010 | Numeric acceptance thresholds are established only after a real baseline is measured, reviewed and committed | - | - | - | - | - | planned | - |
-| OPS-1020 | Maintain the full documentation set: architecture overview, sequence diagrams, protocol specification, event schemas, ADRs, environment matrix and lock files, client setup and packaging guide, GPU server setup and model-download guide, SSH tunnel runbook, test-data provenance and annotation guide, server test runbook, benchmark report, troubleshooting guide, privacy and retention notes, third-party inventory and licenses, immutable model revision manifest | - | - | - | - | - | planned | 8 of the required documents exist; the rest follow their phases |
+| OPS-1020 | Maintain the full documentation set: architecture overview, sequence diagrams, protocol specification, event schemas, ADRs, environment matrix and lock files, client setup and packaging guide, GPU server setup and model-download guide, SSH tunnel runbook, test-data provenance and annotation guide, server test runbook, benchmark report, troubleshooting guide, privacy and retention notes, third-party inventory and licenses, immutable model revision manifest | - | - | - | - | - | planned | protocol specification now exists; architecture overview, runbooks and annotation guide still to come |
 | OPS-1030 | A requirement change requires an explicit proposal with rationale, impact, migration, affected ADRs and tests, and traceability changes; never a silent edit | - | - | - | - | - | planned | - |
 | OPS-1040 | Definition of done as stated in Section 29 | - | - | - | - | - | planned | - |
 | OPS-1050 | Noise suppression is disabled by default; a `NoiseReducer` interface exists; raw normalized and reduced audio are compared on real clips including low-volume and clipped speech; a reducer is enabled only after user-approved evidence | - | - | - | - | - | planned | - |
@@ -359,8 +359,8 @@ accepted_exception
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
 | TEST-010 | All behavioural and model-quality tests use real data; the supplied meeting recording is the canonical input | - | - | - | - | tests/manifests/source-recordings.yaml | planned | recording present and hash-verified; no test consumes it yet |
-| TEST-020 | Allowed fixtures are: the original real recording, clips from it with provenance, real captured WebSocket events, a replay of those events, human-reviewed annotations, and pure-function input extracted from real captures | - | - | - | - | tests/manifests/source-recordings.yaml | planned | - |
-| TEST-030 | Every derived audio fixture records `source_file_sha256`, `start_ms`, `end_ms`, `clip_sha256`, human-reviewed `labels`, `reviewed_by`, `reviewed_at` | - | tools/hash_file.py | - | - | tests/manifests/source-recordings.yaml | implemented | hash, format and canonical sample count recorded for meeting-001 |
+| TEST-020 | Allowed fixtures are: the original real recording, clips from it with provenance, real captured WebSocket events, a replay of those events, human-reviewed annotations, and pure-function input extracted from real captures | - | tools/cut_clip.py | - | - | tests/manifests/source-recordings.yaml | implemented | clip cutter verifies the source hash before reading a sample |
+| TEST-030 | Every derived audio fixture records `source_file_sha256`, `start_ms`, `end_ms`, `clip_sha256`, human-reviewed `labels`, `reviewed_by`, `reviewed_at` | - | tools/cut_clip.py | tests/conformance/ | - | tests/conformance/, 168 passed 1 skipped, dev machine, 2026-09-08 | tested | test_cut_clip.py: every Section 22.2 provenance field is asserted present |
 | TEST-040 | Never mock ASR/LID/speaker/diarization/translation output in a quality test, ask an LLM to invent expected output, modify expected output to match the implementation, claim server tests passed without real artifacts, silently skip a failing test, or use synthetic audio to trigger edge cases | - | - | - | - | - | planned | - |
 | TEST-050 | Claude Code executes client tests locally when the environment permits, and reports the missing real-device gate when it does not | - | - | - | - | - | planned | - |
 | TEST-060 | The ten-step server test gate procedure is followed for every server phase | - | - | - | - | - | planned | - |
@@ -371,9 +371,9 @@ accepted_exception
 | TEST-110 | Create human-reviewed real cases for the sixteen hallucination categories of Section 22.6; report an absent category as unavailable and never synthesize it | - | - | - | - | docs/test-data.md | blocked_real_fixture | availability table is UNKNOWN until the recording is reviewed |
 | TEST-120 | Tests are classified into exactly three categories: A real ML/E2E, B labelled protocol/security/persistence negative vectors, C real-capture replay | - | - | - | - | docs/test-taxonomy.md | implemented | - |
 | TEST-130 | Category B fixtures are labelled `protocol_conformance_fixture` or `negative_test_vector`, are never represented as meeting data, and never support an ASR, language, speaker, overlap or translation quality claim | - | - | - | - | docs/test-taxonomy.md | planned | labelling rule defined; no vector exists yet |
-| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | ADR-0012 | - | - | - | - | planned | - |
+| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | ADR-0012 | tools/cut_clip.py | - | - | - | planned | clip provenance implemented; capture provenance waits for Phase 4 |
 | TEST-150 | The real recording is split into non-overlapping development, validation and locked evaluation ranges, balanced across the available acoustic and linguistic conditions | ADR-0012 | - | - | - | - | blocked_real_fixture | interleaved blocks with boundaries at long silences; locked assigned first (D30) |
-| TEST-160 | The locked evaluation set is never used for threshold tuning | ADR-0012 | - | - | - | - | planned | fixture loader refuses locked clips without an explicit flag; every access audited (D31) |
+| TEST-160 | The locked evaluation set is never used for threshold tuning | ADR-0012 | tools/cut_clip.py | tests/conformance/ | - | tests/conformance/, 168 passed 1 skipped, dev machine, 2026-09-08 | tested | test_cut_clip.py TestLockedSetGuard: refused without --evaluation-run |
 | TEST-170 | The annotation guide defines filler and hesitation transcription, false starts and self-corrections, punctuation and casing, Japanese number representation and tokenization, Vietnamese orthography, English and technical term handling, unintelligible markers, overlap and speaker-unknown notation, timestamp precision, literal-versus-natural translation principles, and reviewer identity, version and adjudication | ADR-0012 | - | - | - | - | blocked_real_fixture | guide_version recorded in every annotation header |
 | TEST-180 | A full-recording soak test over 30 minutes examines memory growth, queues, GPU fragmentation, segment and speaker ID uniqueness, revision integrity, JSONL validity, translation backlog, deadlock and graceful shutdown | ADR-0012 | - | - | - | - | planned | whole 1821.208 s; assertions need no ground truth (D33) |
 | TEST-190 | Steady-state GPU benchmarks separate cold start, warm-up, repeated runs and concurrent workload, and report median, P95 and maximum | ADR-0012 | - | - | - | - | planned | cold, warm, repeated and concurrent measured separately; median, P95, max |

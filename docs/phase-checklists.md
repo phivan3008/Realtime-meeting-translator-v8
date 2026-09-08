@@ -75,13 +75,23 @@ Gates to clear in dependency order. Each produces an ADR before any code.
 | 1.5 | Test taxonomy detail, split manifest format, annotation guide skeleton | Section 26 item 22 | ✅ ADR-0012 |
 | 1.6 | `protocol/` implemented with schema validation | — | ✅ |
 | 1.7 | Category B conformance vectors for envelope, header, revisions, sizes | TEST-130 | ✅ 102 passed |
-| 1.8 | Category A pure-function tests on codec and projection | TEST-010 | ☐ |
-| 1.9 | Import-boundary conformance test | OPS-030 | ☐ |
-| 1.10 | Clip cutter with provenance (`tools/hash_file.py` already done) | TEST-030 | ☐ |
-| 1.11 | Format, lint, type-check, tests, traceability, commit, push | Section 28 | ☐ |
+| 1.8 | ~~Category A pure-function tests on codec and projection~~ | TEST-010 | **withdrawn** - hand-computed byte sequences are purpose-built, so they are category B by definition (Section 25.15 B). No category A test is possible before a real capture exists. |
+| 1.9 | Import-boundary conformance test | OPS-030 | ✅ 43 vectors |
+| 1.10 | Clip cutter with provenance and the locked-set guard | TEST-030, TEST-160 | ✅ 24 vectors |
+| 1.11 | `docs/protocol.md` | Section 26 item 3 | ✅ |
+| 1.12 | Format, lint, type-check, tests, traceability, commit, push | Section 28 | ✅ |
 
-**Blocked in Phase 1:** every category C test, until a real WebSocket capture
-exists (Phase 4).
+**Blocked in Phase 1:** every category C test, and PROT-110's real-capture
+serialization test, until a real WebSocket capture exists (Phase 4).
+
+**Open at the end of Phase 1:**
+
+- No human has listened to the recording, so the sixteen condition categories,
+  the evaluation split and the annotation guide are all still UNKNOWN. That
+  survey blocks TEST-110, TEST-150 and TEST-170, and it is the next thing
+  worth doing.
+- `client/` has no source yet, so the client import-boundary vector reports a
+  visible skip rather than a silent pass. It activates on its own in Phase 2.
 
 ---
 

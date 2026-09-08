@@ -71,6 +71,7 @@ See [ADR-0001](docs/adr/ADR-0001-repository-structure.md) for why.
 | [`docs/model-inventory.md`](docs/model-inventory.md) | model licenses, access conditions, revisions |
 | [`docs/test-taxonomy.md`](docs/test-taxonomy.md) | the three test categories and what each may claim |
 | [`docs/test-data.md`](docs/test-data.md) | real-data provenance and what is still missing |
+| [`docs/protocol.md`](docs/protocol.md) | the wire contract: header layout, events, revisions, errors, limits |
 | [`docs/phase-checklists.md`](docs/phase-checklists.md) | per-phase completion checklist |
 
 ## How work proceeds
@@ -99,5 +100,9 @@ Two rules constrain what may be claimed:
 
 ## Status
 
-Phase 0 — repository audit and requirements. No production source code yet.
+Phase 1 complete: all five design gates settled (ADR-0008 through ADR-0012),
+`protocol/` implemented, 168 conformance vectors passing.
+
+Next: the condition survey of the real recording, which blocks the evaluation
+split and the annotation guide, then Phase 2 (the Windows capture client).
 See [`docs/phase-checklists.md`](docs/phase-checklists.md).
