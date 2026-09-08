@@ -55,10 +55,10 @@ accepted_exception
 | AUD-140 | Send heartbeat/ping messages | - | - | - | - | - | planned | - |
 | AUD-150 | Detect a dead connection | - | - | - | - | - | planned | - |
 | AUD-160 | Reconnect with bounded exponential backoff | - | - | - | - | - | planned | - |
-| AUD-170 | Preserve a bounded amount of unsent audio across reconnect | - | - | - | - | - | planned | - |
-| AUD-180 | Attempt session resume within a configurable retention window | - | - | - | - | - | planned | - |
-| AUD-190 | Report unrecoverable audio gaps clearly | - | - | - | - | - | planned | - |
-| AUD-200 | Never silently reorder, duplicate or discard audio | - | - | - | - | - | planned | - |
+| AUD-170 | Preserve a bounded amount of unsent audio across reconnect | ADR-0009 | - | - | - | - | planned | retention size bounds how often resume hits the dropped-buffer branch; Phase 2 |
+| AUD-180 | Attempt session resume within a configurable retention window | ADR-0009 | - | - | - | - | planned | - |
+| AUD-190 | Report unrecoverable audio gaps clearly | ADR-0009 | - | - | - | - | planned | a shortfall against resume_from_sample becomes an explicit audio.gap |
+| AUD-200 | Never silently reorder, duplicate or discard audio | ADR-0009 | - | - | - | - | planned | resume_from_sample beyond anything sent is an integrity error, never accepted |
 | AUD-210 | Client/audio metrics: frame count, sequence gaps, ring-buffer overflow, callback delays, capture and resample drift, reconnect recovery and lost duration, CPU and memory, log writer integrity | - | - | - | - | - | planned | - |
 | AUD-220 | Select a correct WASAPI loopback device automatically on an arbitrary Windows user machine, given only Python and the project's dependencies | - | - | - | - | - | planned | - |
 
@@ -90,7 +90,7 @@ accepted_exception
 | PROT-020 | Reject unknown major protocol versions | - | - | - | - | - | planned | - |
 | PROT-030 | Ignore unknown optional fields safely within the same major version | - | - | - | - | - | planned | - |
 | PROT-040 | Implement all 21 event types listed in Section 9.3 | - | - | - | - | - | planned | - |
-| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
+| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0009 | - | - | - | - | planned | payload must carry gap counts, synthetic sample total, drain overruns, outcome reasons |
 | PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
 | PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | - | - | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
@@ -104,7 +104,7 @@ accepted_exception
 | PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | gap size measured from absolute start_sample, not inferred |
-| PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | stream-%04d, incremented on discontinuity |
+| PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | resume accepted continues the timeline; refused resume gets a new stream_id |
 | PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 on the wire; JSON integers stay far below 2^53 |
 | PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-220 | The session orchestrator is the sole authority creating `utterance_id` and `segment_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | segment allocated eagerly when the utterance opens (D10) |
@@ -117,10 +117,10 @@ accepted_exception
 | PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | integrity_conflict: refuse, log both payloads, pipeline.error, degrade (D12) |
 | PROT-300 | The protocol carries enough evidence for the client debug log to be a self-sufficient event source | ADR-0004 | - | - | - | - | planned | - |
 | PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | projection table for every revision-bearing event is in the ADR |
-| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | gap_samples = next.start_sample - previous.frame_end_sample |
+| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | gap_samples = next.start_sample - previous.frame_end_sample |
 | PROT-330 | Maximum frame and event sizes are defined and enforced | - | - | - | - | - | planned | - |
 | PROT-340 | Error codes and version compatibility rules are documented | - | - | - | - | - | planned | - |
-| PROT-350 | The exact resume contract is approved at the protocol design gate | - | - | - | - | - | planned | - |
+| PROT-350 | The exact resume contract is approved at the protocol design gate | ADR-0009 | - | - | - | - | planned | resume carries last_sent_sequence and last_sent_start_sample; server answers resume_from_sample (D17) |
 | PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-380 | Stale asynchronous responses are persisted as diagnostics but never update current projection | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | stale returns a refusal reason and is logged as a diagnostic |
@@ -131,7 +131,7 @@ accepted_exception
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
 | VAD-010 | Preprocessing order: wire validation → PCM conversion → channel validation/downmix → sample-rate validation/resampling → DC removal → conservative level normalization → optional feature-flagged noise reduction → VAD | - | - | - | - | - | planned | - |
-| VAD-020 | Calculate and log non-content quality features: duration, peak, RMS, clipping ratio, zero ratio, missing frame count, speech ratio | - | - | - | - | - | planned | - |
+| VAD-020 | Calculate and log non-content quality features: duration, peak, RMS, clipping ratio, zero ratio, missing frame count, speech ratio | - | - | - | - | - | planned | synthetic samples are excluded from speech_ratio, RMS, peak, clipping and zero ratio |
 | VAD-030 | Quality features are evidence, never standalone truth | - | - | - | - | - | planned | - |
 | VAD-040 | Silero streaming state machine: IDLE → POSSIBLE_SPEECH → SPEAKING → POSSIBLE_END → FINALIZING → IDLE | - | - | - | - | - | planned | - |
 | VAD-050 | Configurable, benchmark-derived parameters: `threshold`, `min_speech_ms`, `min_silence_ms`, `speech_pad_ms`, `pre_roll_ms`, `post_roll_ms`, `max_utterance_ms` | - | - | - | - | - | planned | - |
@@ -140,7 +140,7 @@ accepted_exception
 | VAD-080 | Post-roll preserves quiet word endings | - | - | - | - | - | planned | - |
 | VAD-090 | Natural short pauses do not automatically split a sentence | - | - | - | - | - | planned | - |
 | VAD-100 | Maximum utterance duration forces a controlled cut with overlap and context preservation | - | - | - | - | - | planned | - |
-| VAD-110 | A network gap is never mistaken for a natural speech endpoint | - | - | - | - | - | planned | - |
+| VAD-110 | A network gap is never mistaken for a natural speech endpoint | ADR-0009 | - | - | - | - | planned | medium and large gaps close the utterance as truncated_by_gap and reset VAD |
 | VAD-120 | Too-short or too-weak speech is rejected or marked low confidence, never expanded into a plausible sentence | - | - | - | - | - | planned | - |
 | VAD-130 | Silero runs on CPU | ADR-0007 | - | - | - | - | planned | ONNX Runtime build proposed so torch stays out of the core venv |
 | VAD-140 | Silero is the live endpointing authority; pyannote does not open or close ASR utterances in MVP | - | - | - | - | - | planned | - |
@@ -175,7 +175,7 @@ accepted_exception
 | ASR-240 | Every benchmark artifact records model repository, revision/commit, tokenizer, backend version, compute type and decode parameters | - | - | - | - | - | planned | 4 cached models have revisions chosen by other work; must be read off disk and pinned |
 | ASR-250 | Implement all nine defensive hallucination layers | - | - | - | - | - | planned | - |
 | ASR-260 | Audio validity gate rejects or flags: missing sequence ranges, all-zero or near-zero content, excessive clipping, invalid duration, invalid numeric values after conversion, resampling failure, extremely low RMS, too little detected speech, truncation by disconnection, unsafe maximum-duration cut | - | - | - | - | - | planned | - |
-| ASR-270 | Collect decode evidence where available: `avg_logprob`, `no_speech_prob`, `compression_ratio`, `speech_ratio`, `temperature_used`, `language_id` | - | - | - | - | - | planned | - |
+| ASR-270 | Collect decode evidence where available: `avg_logprob`, `no_speech_prob`, `compression_ratio`, `speech_ratio`, `temperature_used`, `language_id` | - | - | - | - | - | planned | evidence collection must know which samples are synthetic (ADR-0009 D15) |
 | ASR-280 | Also calculate repeated token/character/n-gram indicators, text length versus speech duration, similarity to the prior segment, language disagreement, timestamp plausibility, partial instability, and audio energy/clipping evidence | - | - | - | - | - | planned | - |
 | ASR-290 | No single threshold is sufficient; acceptance uses combined evidence, tuned from the real recording and documented | - | - | - | - | - | planned | - |
 | ASR-300 | Failed-gate retry policy: shorter or reset context, disable previous-text conditioning, force the reliable LID language, apply only benchmark-approved fallback settings, then return `low_confidence` or `rejected` | - | - | - | - | - | planned | - |
@@ -216,7 +216,7 @@ accepted_exception
 | SPK-010 | MVP outputs anonymous IDs only (`speaker-1`, `speaker-2`, …) | - | - | - | - | - | planned | - |
 | SPK-020 | SpeechBrain ECAPA embeddings feed an online clustering component | - | - | - | - | - | planned | - |
 | SPK-030 | Clustering algorithm and thresholds are selected at a design gate after real-data experiments | - | - | - | - | - | planned | - |
-| SPK-040 | Never create or update a speaker profile from segments that are too short, silence or weak filler, heavily overlapped, extremely noisy, rejected by audio validity checks, or damaged by an experimental separator | - | - | - | - | - | planned | - |
+| SPK-040 | Never create or update a speaker profile from segments that are too short, silence or weak filler, heavily overlapped, extremely noisy, rejected by audio validity checks, or damaged by an experimental separator | - | - | - | - | - | planned | synthetic silence never updates a speaker profile |
 | SPK-050 | Speaker labels on active and partial segments are provisional and revisable | - | - | - | - | - | planned | - |
 | SPK-060 | `speaker.updated` events support retrospective merge and relabel | - | - | - | - | - | planned | - |
 | SPK-070 | Pyannote is isolated and used for overlap detection, speaker-change evidence, retrospective refinement and controlled comparison | - | - | - | - | - | planned | pyannote gating conditions accepted 2026-09-08; download proves the token at the Phase 8 gate |
@@ -270,10 +270,10 @@ accepted_exception
 | PERS-010 | `meeting_<session-id>_debug.jsonl` is the append-only authoritative event log | - | - | - | - | - | planned | - |
 | PERS-020 | The debug log includes session lifecycle, client and server status, audio gaps and acknowledgements, VAD events, partial revisions, final and corrected transcription, speaker revisions, language decisions and evidence, overlap intervals, ASR quality evidence, translation lifecycle, errors, warnings, latency metadata, and model/config/version identifiers | - | - | - | - | - | planned | - |
 | PERS-030 | `meeting_<session-id>_history.jsonl` is a live projection carrying no authority; `meeting_<session-id>_history.final.jsonl` is the compacted deliverable | ADR-0004 | - | - | - | - | planned | three-file set decided; schema at the Phase 1 log gate |
-| PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | - | - | - | - | - | planned | - |
+| PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | ADR-0009 | - | - | - | - | planned | - |
 | PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | - | - | - | - | - | planned | - |
 | PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | - | - | - | - | - | planned | - |
-| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0008 | - | - | - | - | planned | rebuild uses the same shared reducer as the UI and the compaction (D13) |
+| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0009 | - | - | - | - | planned | rebuild uses the same shared reducer as the UI and the compaction (D13) |
 | PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | - | - | - | - | - | planned | - |
 | PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | - | - | - | - | - | planned | - |
 | PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | - | - | - | - | - | planned | - |
@@ -309,15 +309,15 @@ accepted_exception
 | OPS-530 | All services use structured logs carrying session ID, stream ID, segment ID, event ID, revision, service and worker, monotonic processing timestamps and UTC correlation time | - | - | - | - | - | planned | - |
 | OPS-540 | Metrics exportable in Prometheus-compatible form where practical | - | - | - | - | - | planned | - |
 | OPS-550 | Sensitive audio and text excluded from normal operational logs unless debug content logging is explicitly enabled | - | - | - | - | - | planned | - |
-| OPS-600 | All tunable values externalized into validated configuration | - | - | - | - | - | planned | seal_window_samples is benchmark_required; config validation refuses to start without it |
+| OPS-600 | All tunable values externalized into validated configuration | - | - | - | - | - | planned | 3 gap thresholds, 4 stop budgets and seal_window_samples are all benchmark_required; startup refuses without them |
 | OPS-610 | Every debug log and benchmark artifact includes a configuration hash | - | - | - | - | - | planned | - |
-| OPS-700 | Graceful stop executes the full sequence: reject frames after final sequence, close or reject incomplete gap ranges, flush the active VAD utterance, final-decode if minimum speech requirements are met, complete/retry/cancel translation within a bounded drain timeout, run bounded pending refinement, seal remaining segments, emit `session.summary`, emit `session.stopped`, close persistence projection atomically | - | - | - | - | - | planned | - |
-| OPS-710 | The Session Lifecycle ADR defines stop acknowledgement timeout, ASR flush timeout, translation drain timeout, refinement timeout, worker cancellation behaviour, client behaviour when `session.stopped` is not received, conditions for `completed` / `completed_with_warnings` / `failed`, and the recovery/compaction command after abrupt termination | - | - | - | - | - | planned | - |
-| OPS-720 | A server restart makes the active meeting unrecoverable; the client emits and persists `session_unrecoverable` and requires a new session | - | - | - | - | - | planned | - |
-| OPS-730 | The client never resends an entire meeting to a restarted server as if live continuity were preserved | - | - | - | - | - | planned | - |
-| OPS-740 | Gap policy is configurable by duration class — small: preserve the interval, optionally insert marked silence, attach gap evidence; medium: close the utterance as `truncated_by_gap`, reset VAD, require stricter ASR acceptance; large: invalidate resume continuity, reset VAD and ASR context, require explicit discontinuity or a new stream | - | - | - | - | - | planned | - |
-| OPS-750 | No implementation decodes across an unreported gap | ADR-0008 | - | - | - | - | planned | enforceable by assertion because gap size is measured, not inferred |
-| OPS-760 | A segment intersecting a gap is not translated unless its accepted final passes the gap-aware quality policy | - | - | - | - | - | planned | - |
+| OPS-700 | Graceful stop executes the full sequence: reject frames after final sequence, close or reject incomplete gap ranges, flush the active VAD utterance, final-decode if minimum speech requirements are met, complete/retry/cancel translation within a bounded drain timeout, run bounded pending refinement, seal remaining segments, emit `session.summary`, emit `session.stopped`, close persistence projection atomically | ADR-0009 | - | - | - | - | planned | ASR flush, then translation drain, then refinement; per-stage budgets |
+| OPS-710 | The Session Lifecycle ADR defines stop acknowledgement timeout, ASR flush timeout, translation drain timeout, refinement timeout, worker cancellation behaviour, client behaviour when `session.stopped` is not received, conditions for `completed` / `completed_with_warnings` / `failed`, and the recovery/compaction command after abrupt termination | ADR-0009 | - | - | - | - | planned | four independent wall-clock budgets, all benchmark_required (D18) |
+| OPS-720 | A server restart makes the active meeting unrecoverable; the client emits and persists `session_unrecoverable` and requires a new session | ADR-0009 | - | - | - | - | planned | server_epoch uuid4 echoed on session responses; a changed epoch is a restart (D16) |
+| OPS-730 | The client never resends an entire meeting to a restarted server as if live continuity were preserved | ADR-0009 | - | - | - | - | planned | client compacts what it holds and requires a new session |
+| OPS-740 | Gap policy is configurable by duration class — small: preserve the interval, optionally insert marked silence, attach gap evidence; medium: close the utterance as `truncated_by_gap`, reset VAD, require stricter ASR acceptance; large: invalidate resume continuity, reset VAD and ASR context, require explicit discontinuity or a new stream | ADR-0009 | - | - | - | - | planned | small inserts marked synthetic silence only inside an open utterance (D15) |
+| OPS-750 | No implementation decodes across an unreported gap | ADR-0009 | - | - | - | - | planned | enforceable by assertion because gap size is measured, not inferred |
+| OPS-760 | A segment intersecting a gap is not translated unless its accepted final passes the gap-aware quality policy | ADR-0009 | - | - | - | - | planned | gap-intersecting segments are not translated without the gap-aware check |
 | OPS-800 | GPU admission implements the seven-level priority policy of Section 25.11 | - | - | - | - | - | planned | - |
 | OPS-810 | Final ASR is never starved by translation or retrospective work; partial jobs may be coalesced or skipped; final jobs are never dropped | - | - | - | - | - | planned | - |
 | OPS-820 | SpeechBrain LID and speaker embedding are benchmarked on CPU and GPU before placement is fixed | - | - | - | - | - | planned | - |
