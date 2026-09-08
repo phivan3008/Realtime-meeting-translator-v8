@@ -1,0 +1,48 @@
+# Tool configuration only. This repository is not (yet) an installable
+# distribution; see ADR-0001, "Open questions".
+#
+# Toolchain decided in ADR-0003: ruff format, ruff check, mypy --strict,
+# pydantic v2 for schema validation, pytest as the runner.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["client", "server", "protocol", "tools", "tests"]
+exclude = [".venv", "data", "docs"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+    "PTH",  # use pathlib
+    "RUF",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+files = ["."]
+exclude = "(^\\.venv/|^data/)"
+
+# Third-party packages without bundled type information get an explicit
+# per-module exemption here rather than a blanket suppression (ADR-0003).
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "real_ml: category A - real recording and real models",
+    "conformance: category B - labelled protocol/security/persistence vectors",
+    "replay: category C - real captured WebSocket traffic replay",
+    "server_gate: requires the H100 pod; never run on the dev machine",
+]

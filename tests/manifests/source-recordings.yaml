@@ -1,0 +1,54 @@
+# Source recordings for category A fixtures.
+#
+# Metadata only. The audio itself lives in data/recordings/ and is excluded
+# from Git (PERS-120). Every clip cut for a fixture cites one of these entries
+# by sha256 (TEST-030).
+#
+# Verify a file still matches its entry:
+#   python tools/hash_file.py data/recordings/<filename> --expect-sha256 <sha256>
+
+schema_version: 1
+
+recordings:
+  - id: meeting-001
+    filename: meeting_record.wav
+    location: data/recordings/meeting_record.wav
+    sha256: 9f4e36d146c442f926307a8ff0e6841594ca788505c2949eedb5bfe1a8007625
+    size_bytes: 58278700
+    container: wav
+    codec: pcm_s16le
+    sample_rate_hz: 16000
+    channels: 1
+    sample_width_bytes: 2
+    frames: 29139328
+    duration_seconds: 1821.208
+    canonical_16k_samples: 29139328
+
+    provided_by: user
+    provided_at: 2026-09-08
+    verified_by: tools/hash_file.py on the dev machine, 2026-09-08
+    hash_confirmed_against: user's Get-FileHash on the source machine
+
+    # Everything below is UNKNOWN until a human has listened to the recording.
+    # It is not inferred from a model, and it is not guessed (TEST-260).
+    languages_present: UNKNOWN
+    speakers_estimated: UNKNOWN
+    condition_coverage: see docs/test-data.md - all sixteen categories UNKNOWN
+    annotation_status: none
+
+    notes: >
+      Already mono PCM s16le at 16 kHz, which is exactly the canonical wire
+      format of PROT-080. No resampling or downmix is needed to feed it to the
+      server, so a server-side replay can send the file's sample data verbatim
+      as wire frames and the fixture timeline is the canonical timeline with no
+      conversion step in between.
+
+      Duration 1821.208 s is 30m 21.21s, which satisfies the "more than 30
+      minutes" full-recording soak test of requirements.md Section 25.15
+      (TEST-180) with about 21 seconds of margin.
+
+# Evaluation split (TEST-150, TEST-160).
+# Deliberately empty: a balanced split requires knowing what is in the audio,
+# and nobody has listened to it yet. Populated in Phase 12, or earlier if the
+# condition survey in docs/test-data.md is completed first.
+splits: {}

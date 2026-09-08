@@ -1,0 +1,92 @@
+# =============================================================================
+# Live Japanese-Vietnamese Meeting Translator
+# This file must exist BEFORE any model is downloaded or any meeting is
+# recorded. See CLAUDE.md Section 21 and requirements.md Section 25.14.
+# =============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+.venv-*/
+
+# --- Tool caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+htmlcov/
+.coverage
+.coverage.*
+
+# --- Model weights and caches (never commit) ---
+models/
+checkpoints/
+*.onnx
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.ct2
+hf_cache/
+.cache/
+torch_hub/
+
+# --- Meeting audio and recordings (confidential; never commit) ---
+# data/* rather than data/ so the README explaining the directory survives;
+# a re-include cannot rescue a file whose parent directory is excluded.
+data/*
+recordings/
+audio/
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+*.opus
+*.mp4
+
+# --- Meeting logs and history (confidential meeting content) ---
+meeting_*_debug.jsonl
+meeting_*_history.jsonl
+meeting_*_history.final.jsonl
+logs/
+*.log
+
+# --- Benchmark and test raw output ---
+benchmarks/output/
+tests/**/output/
+artifacts/
+*.prof
+nvidia-smi-*.txt
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+secrets/
+hf_token*
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Explicit exceptions: metadata and documentation, never media ---
+!data/README.md
+!tests/fixtures/**/*.json
+!tests/fixtures/**/*.yaml
+!tests/manifests/**/*.json
+!tests/manifests/**/*.yaml

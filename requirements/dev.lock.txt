@@ -1,0 +1,18 @@
+# Generated on the Windows dev machine, Python 3.11.9, 2026-09-08.
+# Regenerate with:
+#   .venv/Scripts/python.exe -m pip freeze > requirements/dev.lock.txt
+# ADR-0003. This lock covers the development toolchain only; each runtime
+# dependency domain gets its own lock file (ADR-0007).
+ast_serialize==0.10.0
+colorama==0.4.6
+iniconfig==2.3.0
+librt==0.15.0
+mypy==2.3.1
+mypy_extensions==1.1.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.6.0
+Pygments==2.21.0
+pytest==9.1.1
+ruff==0.16.6
+typing_extensions==4.16.0
