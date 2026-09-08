@@ -1,0 +1,4 @@
+# Core dependency domain: protocol, gateway, orchestrator.
+# ADR-0001 rule: no ML dependency may appear in this file.
+# ADR-0007: this becomes the pod's .venv at Phase 4.
+pydantic>=2

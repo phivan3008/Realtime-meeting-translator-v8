@@ -284,10 +284,11 @@ Enforcement differs by severity, and the distinction matters:
   `benchmark_required`.
 - Section 9.2 requires real-capture serialization tests **before** server
   implementation. No real capture exists yet, so Phase 1 covers the codec with
-  category A pure-function tests over hand-computed byte sequences and category
-  B malformed-header vectors, and the requirement stays short of `tested` until
-  Phase 4 produces a genuine capture. That gap is recorded rather than papered
-  over.
+  **category B** conformance vectors only: hand-computed byte sequences and
+  malformed headers are purpose-built inputs, which is category B by definition
+  (Section 25.15 B), not category A. PROT-110 therefore stays at
+  `blocked_real_fixture` until a Phase 4 server run produces a genuine capture.
+  That gap is recorded rather than papered over with an invented capture.
 - The acknowledgement doubles as the backpressure channel, which removes a
   mechanism rather than adding one.
 - Client overflow and network loss converge on the same `audio.gap`

@@ -23,17 +23,17 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 268 |
-| implemented | 17 |
-| tested | 2 |
+| planned | 220 |
+| implemented | 48 |
+| tested | 18 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
-| blocked_real_fixture | 4 |
+| blocked_real_fixture | 5 |
 | failed | 0 |
 | accepted_exception | 0 |
 | **total** | **291** |
 
-268 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+220 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
@@ -75,7 +75,7 @@ accepted_exception
 | UI-070 | Per segment show: speaker ID, language ID, source start/end time, transcription row, translation row, partial/final state, overlap indicator, low-confidence/warning indicator | - | - | - | - | - | planned | - |
 | UI-080 | Partial transcription visually distinguishable from final | - | - | - | - | - | planned | - |
 | UI-090 | Translation shows a pending state between final ASR and Qwen returning | - | - | - | - | - | planned | - |
-| UI-100 | A translation error never removes or alters the final transcript | - | - | - | - | - | planned | - |
+| UI-100 | A translation error never removes or alters the final transcript | - | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_translation_failure_preserves_the_transcript |
 | UI-110 | A retry action may retry failed translation without re-running ASR | - | - | - | - | - | planned | - |
 | UI-120 | Project records by `segment_id` using the Section 25 revision model; ignore and log duplicate and stale events | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | client uses the shared reducer, not its own projection (D13) |
 | UI-130 | A speaker-only revision must not replace newer text, language or translation state | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
@@ -86,45 +86,45 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| PROT-010 | Every control event carries `protocol_version`, `event_type`, `session_id`, `event_id`, `sent_at_utc` | - | - | - | - | - | planned | - |
-| PROT-020 | Reject unknown major protocol versions | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-030 | Ignore unknown optional fields safely within the same major version | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-040 | Implement all 21 event types listed in Section 9.3 | - | - | - | - | - | planned | - |
-| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0009 | - | - | - | - | planned | session.summary payload shape at the G14 log-schema gate |
-| PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
+| PROT-010 | Every control event carries `protocol_version`, `event_type`, `session_id`, `event_id`, `sent_at_utc` | - | protocol/ | - | - | - | implemented | protocol/events.py Envelope |
+| PROT-020 | Reject unknown major protocol versions | ADR-0010 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_unknown_major_version_is_rejected |
+| PROT-030 | Ignore unknown optional fields safely within the same major version | ADR-0010 | protocol/ | - | - | - | implemented | extra=ignore on every wire model |
+| PROT-040 | Implement all 21 event types listed in Section 9.3 | - | protocol/ | - | - | - | implemented | protocol/events.py EVENT_MODELS, all 21 types |
+| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0009 | protocol/ | - | - | - | implemented | protocol/events.py SessionSummary |
+| PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | protocol/ | - | - | - | implemented | protocol/events.py CapabilityUpdated |
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
-| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
-| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | both implemented, config-selected; 20 ms provisional default pending benchmark |
-| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | 28-byte little-endian header, all fields naturally aligned (D20) |
-| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | codec tests are pure-function until Phase 4 yields a real capture; gap recorded |
+| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py |
+| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | protocol/ | - | - | - | implemented | frame duration is config-selected; benchmark pending |
+| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0010 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_field_offsets_match_the_adr |
+| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/frame.py | tests/conformance/test_frame_codec.py | - | - | blocked_real_fixture | layout covered by category B vectors; Section 9.2 real-capture serialization needs a Phase 4 server run |
 | PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | cumulative acked_through_sample doubles as the backpressure channel (D21, D22) |
-| PROT-130 | No component creates an unbounded queue | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 sample offset at 16 kHz, origin 0 at session start |
-| PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | floor(sample * 1000 / 16000) |
-| PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | gap size measured from absolute start_sample, not inferred |
+| PROT-130 | No component creates an unbounded queue | ADR-0010 | protocol/ | - | - | - | implemented | no unbounded container in protocol/ |
+| PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_timeline.py TestConversion, TestSampleOffsetValidation |
+| PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_samples_to_ms_floors |
+| PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ | - | - | - | implemented | protocol/timeline.py works only in integers |
+| PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | ADR-0008 | protocol/ | - | - | - | implemented | capture_monotonic_ns is header metadata, never an ordering key |
+| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_gap_preserves_its_duration |
 | PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | resume accepted continues the timeline; refused resume gets a new stream_id |
-| PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 on the wire; JSON integers stay far below 2^53 |
-| PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | ADR-0008 | protocol/ | - | - | - | implemented | protocol/timeline.py validate_sample_offset |
+| PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ | - | - | - | implemented | protocol/identifiers.py, one allocator per kind |
 | PROT-220 | The session orchestrator is the sole authority creating `utterance_id` and `segment_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | segment allocated eagerly when the utterance opens (D10) |
-| PROT-230 | Whisper subsegment and token-timestamp local IDs never become public `segment_id` values | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | operation: create \| revise \| split \| merge \| seal |
-| PROT-250 | A revision retains the same `segment_id`; a new `segment_id` is created only when a split cannot be represented as a revision | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | on split the original keeps its ID and narrows (D11) |
-| PROT-260 | Every current segment projection carries `content_revision`, `language_revision`, `speaker_revision`, `translation_revision`, `translated_from_content_revision`, `translated_from_language_revision` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-270 | Revision dependency rules: content change invalidates translation; language change invalidates translation and requires revalidation; speaker-only change does not | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | content or language invalidates translation; speaker never does |
-| PROT-280 | Replaying the same event is idempotent by `event_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | duplicate event_id returns a refusal, not an exception |
-| PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | integrity_conflict: refuse, log both payloads, pipeline.error, degrade (D12) |
+| PROT-230 | Whisper subsegment and token-timestamp local IDs never become public `segment_id` values | ADR-0008 | protocol/ | - | - | - | implemented | no Whisper-local id reaches a public field |
+| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | ADR-0008 | protocol/ | - | - | - | implemented | protocol/events.py SegmentLineage |
+| PROT-250 | A revision retains the same `segment_id`; a new `segment_id` is created only when a split cannot be represented as a revision | ADR-0008 | protocol/ | - | - | - | implemented | reducer keeps segment_id across revisions |
+| PROT-260 | Every current segment projection carries `content_revision`, `language_revision`, `speaker_revision`, `translation_revision`, `translated_from_content_revision`, `translated_from_language_revision` | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_projection.py TestRevisionDependencies |
+| PROT-270 | Revision dependency rules: content change invalidates translation; language change invalidates translation and requires revalidation; speaker-only change does not | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | content and language invalidate; speaker does not |
+| PROT-280 | Replaying the same event is idempotent by `event_id` | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_projection.py TestIdempotency |
+| PROT-290 | Equal revision with different payload is an integrity conflict, never last-write-wins | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_equal_revision_different_payload_is_an_integrity_conflict |
 | PROT-300 | The protocol carries enough evidence for the client debug log to be a self-sufficient event source | ADR-0004 | - | - | - | - | planned | - |
-| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | projection table for every revision-bearing event is in the ADR |
-| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | gap_samples = next.start_sample - previous.frame_end_sample |
-| PROT-330 | Maximum frame and event sizes are defined and enforced | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | frame 16 KB, event 64 KB; exceeding either terminates the connection |
-| PROT-340 | Error codes and version compatibility rules are documented | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | namespaced string error codes; minor versions are additive only (D23) |
+| PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ | - | - | - | implemented | protocol/projection.py implements the ADR-0008 table |
+| PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0009 | protocol/ | - | - | - | implemented | protocol/timeline.py measure_gap; emitter arrives in Phase 4 |
+| PROT-330 | Maximum frame and event sizes are defined and enforced | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py; frame limit tested, event limit not yet |
+| PROT-340 | Error codes and version compatibility rules are documented | ADR-0010 | protocol/ | - | - | - | implemented | protocol/errors.py, protocol/version.py |
 | PROT-350 | The exact resume contract is approved at the protocol design gate | ADR-0009 | - | - | - | - | planned | resume carries last_sent_sequence and last_sent_start_sample; server answers resume_from_sample (D17) |
-| PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ | - | - | - | implemented | one utterance_id per segment in the projection |
 | PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-380 | Stale asynchronous responses are persisted as diagnostics but never update current projection | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | stale returns a refusal reason and is logged as a diagnostic |
-| PROT-400 | Schema validation for all control events and worker messages | - | - | - | - | - | planned | - |
+| PROT-380 | Stale asynchronous responses are persisted as diagnostics but never update current projection | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_lower_content_revision_is_stale |
+| PROT-400 | Schema validation for all control events and worker messages | - | protocol/ | - | - | - | implemented | pydantic v2 on every wire model |
 
 ## VAD - preprocessing and segmentation
 
@@ -187,11 +187,11 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| LID-010 | Allowed languages are `ja` and `vi`; translation direction is `ja → vi` and `vi → ja` | - | - | - | - | - | planned | - |
+| LID-010 | Allowed languages are `ja` and `vi`; translation direction is `ja → vi` and `vi → ja` | - | protocol/ | - | - | - | implemented | protocol/enums.py TRANSLATION_DIRECTION |
 | LID-020 | The resolver combines SpeechBrain probabilities, Whisper evidence, recent speaker language, recent meeting language state, utterance duration and confidence | - | - | - | - | - | planned | - |
 | LID-030 | SpeechBrain is the primary acoustic signal; Whisper is a secondary validation signal | - | - | - | - | docs/model-inventory.md | planned | VoxLingua107 confirmed to include both ja and vi |
-| LID-040 | Language states: `unknown`, `provisional_ja`, `provisional_vi`, `confirmed_ja`, `confirmed_vi`, `mixed`, `uncertain` | - | - | - | - | - | planned | - |
-| LID-050 | The protocol separates `language_id`, `language_status` and `language_revision` | - | - | - | - | - | planned | - |
+| LID-040 | Language states: `unknown`, `provisional_ja`, `provisional_vi`, `confirmed_ja`, `confirmed_vi`, `mixed`, `uncertain` | - | protocol/ | - | - | - | implemented | protocol/enums.py LanguageStatus |
+| LID-050 | The protocol separates `language_id`, `language_status` and `language_revision` | - | protocol/ | - | - | - | implemented | language_id, language_status and language_revision are separate |
 | LID-060 | Never run LID independently on transport-sized fragments | - | - | - | - | - | planned | - |
 | LID-070 | Never trust very short utterances such as acknowledgements without context and hysteresis | - | - | - | - | - | planned | - |
 | LID-080 | Restrict normal decisions to Japanese and Vietnamese | - | - | - | - | - | planned | - |
@@ -226,14 +226,14 @@ accepted_exception
 | SPK-110 | For detected overlap: mark `overlap=true`, preserve overlap intervals in the debug log, run the normal ASR path on mixed audio, lower confidence or attach a warning when justified, never claim both speakers were fully recovered | - | - | - | - | - | planned | - |
 | SPK-120 | Provide a `SourceSeparator` interface with the production default disabled | - | - | - | - | - | planned | - |
 | SPK-130 | SepFormer experiments run only on detected overlap regions, outside the default critical path, always preserving the mixed-audio baseline, compared on human-reviewed real data, recording latency and artifacts, and never automatically preferred | - | - | - | - | - | planned | - |
-| SPK-140 | Multi-speaker schema supports `primary_speaker_id` (nullable or `speaker-unknown`), `speaker_status`, `speaker_candidates` with confidences, `overlap`, `overlap_intervals` | - | - | - | - | - | planned | - |
-| SPK-150 | `speaker-multiple` is a presentation label only, never an embedding cluster | - | - | - | - | - | planned | - |
+| SPK-140 | Multi-speaker schema supports `primary_speaker_id` (nullable or `speaker-unknown`), `speaker_status`, `speaker_candidates` with confidences, `overlap`, `overlap_intervals` | - | protocol/ | - | - | - | implemented | protocol/events.py speaker_candidates, overlap_intervals |
+| SPK-150 | `speaker-multiple` is a presentation label only, never an embedding cluster | - | protocol/ | - | - | - | implemented | protocol/identifiers.py reserved labels |
 | SPK-160 | The orchestrator may split one utterance into multiple text segments aligned to speaker changes while preserving utterance lineage | - | - | - | - | - | planned | - |
 | SPK-170 | Speaker IDs are never inferred from pyannote label name or order | - | - | - | - | - | planned | - |
-| SPK-180 | Canonical anonymous speaker IDs are session-scoped, monotonically allocated and never reused | - | - | - | - | - | planned | - |
-| SPK-190 | Merge events carry `operation`, `from_speaker_ids`, `to_speaker_id`, `speaker_revision` | - | - | - | - | - | planned | - |
-| SPK-200 | Merged IDs become aliases of the canonical target and remain in debug history | - | - | - | - | - | planned | - |
-| SPK-210 | Projection rewrites affected current segment views to the canonical ID without modifying content or translation revisions | ADR-0008 | - | - | - | - | planned | merge rewrites views to the canonical ID; content and translation revisions untouched |
+| SPK-180 | Canonical anonymous speaker IDs are session-scoped, monotonically allocated and never reused | - | protocol/ | - | - | - | implemented | OrdinalAllocator widens rather than wraps |
+| SPK-190 | Merge events carry `operation`, `from_speaker_ids`, `to_speaker_id`, `speaker_revision` | - | protocol/ | - | - | - | implemented | protocol/events.py SpeakerUpdated merge validator |
+| SPK-200 | Merged IDs become aliases of the canonical target and remain in debug history | - | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_merged_id_becomes_an_alias |
+| SPK-210 | Projection rewrites affected current segment views to the canonical ID without modifying content or translation revisions | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_merge_leaves_content_and_translation_revisions_alone |
 | SPK-220 | Split operations require new canonical IDs, explicit affected intervals and segments, and lineage | ADR-0008 | - | - | - | - | planned | - |
 | SPK-230 | Pyannote local labels are mapped to canonical IDs using temporal overlap, embedding similarity, duration and confidence | - | - | - | - | - | planned | - |
 | SPK-240 | The Pyannote Scheduling ADR decides rolling-window length and overlap, cadence and priority, maximum retrospective window, mapping confidence policy, reconciliation with SpeechBrain online clusters, split/merge thresholds and minimum evidence, and ambiguous-mapping behaviour | - | - | - | - | - | planned | pyannote/segmentation-3.0 native window is 10 s; powerset caps 3 speakers per window |
@@ -252,14 +252,14 @@ accepted_exception
 | TRN-060 | Every request states source language and code, target language and code, the current final source text, bounded accepted context if enabled, translate-only instruction, preservation of names/numbers/dates/URLs/code/identifiers, no added information, no invented source correction, and a defined response schema | - | - | - | - | - | planned | - |
 | TRN-070 | Never ask Qwen to identify the language | - | - | - | - | - | planned | - |
 | TRN-080 | Translation states are `pending`, `completed`, `failed` | - | - | - | - | - | planned | - |
-| TRN-090 | A translation timeout or failure never invalidates final ASR | - | - | - | - | - | planned | - |
+| TRN-090 | A translation timeout or failure never invalidates final ASR | - | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_translation_failure_preserves_the_transcript |
 | TRN-100 | Translation may be retried idempotently by segment ID | - | - | - | - | - | planned | - |
-| TRN-110 | A stale translation response for an older transcription revision is discarded | ADR-0008 | - | - | - | - | planned | translation.final refused as stale unless both echoed source revisions match |
+| TRN-110 | A stale translation response for an older transcription revision is discarded | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_translation_echoing_superseded_text_is_stale |
 | TRN-120 | Qwen output is validated before display and persistence | - | - | - | - | - | planned | - |
 | TRN-130 | Translation context is a configurable A/B feature, disabled by default: bounded recent accepted non-rejected finals, in clearly separated fields, reference only, never translated or copied into output, excluding partial and low-confidence text; including prior translations is a separate default-off experiment | - | - | - | - | - | planned | - |
 | TRN-140 | Output validation rejects or retries: empty output for non-empty accepted source, reasoning tags or analysis text, Markdown fences or explanatory preamble, schema violations or extra fields, unexpected output language, implausible output/source length ratio, loss or alteration of protected numbers/dates/URLs/code/identifiers, stale source revisions | - | - | - | - | - | planned | - |
 | TRN-150 | After bounded retries emit `translation.failed`; validators never silently rewrite translation text | - | - | - | - | - | planned | - |
-| TRN-160 | Translation firewall: Qwen never receives partial transcription, rejected segments, raw unchecked hypotheses, silence or non-speech, unresolved-language segments, or low-confidence fragments by default | - | - | - | - | - | planned | - |
+| TRN-160 | Translation firewall: Qwen never receives partial transcription, rejected segments, raw unchecked hypotheses, silence or non-speech, unresolved-language segments, or low-confidence fragments by default | - | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_projection.py TestTranslationFirewall |
 | TRN-170 | Translation quality metrics are reported only after human references and review exist | - | - | - | - | - | planned | - |
 | TRN-180 | Translation is final-only; partial translation is out of scope | - | - | - | - | - | planned | - |
 
@@ -276,7 +276,7 @@ accepted_exception
 | PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0011 | - | - | - | - | planned | rebuild is read, unwrap, fold with the same reducer the UI uses |
 | PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | ADR-0011 | - | - | - | - | planned | log_seq makes a truncated tail distinguishable from a clean close (D26) |
 | PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | ADR-0011 | - | - | - | - | planned | missing, duplicate and regressing log_seq are three distinct vectors |
-| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | ADR-0011 | - | - | - | - | planned | session id validated against a strict pattern before it reaches a path |
+| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | ADR-0011 | protocol/ | - | - | - | implemented | session id validated against a uuid4 pattern before any path use |
 | PERS-110 | Raw audio persistence is disabled by default; in explicit diagnostic mode the log records path, sample count, format and SHA-256 | ADR-0011 | - | - | - | - | planned | - |
 | PERS-120 | Audio files, meeting logs and benchmark raw outputs are never committed to Git | - | .gitignore | - | - | .gitignore | implemented | - |
 | PERS-130 | The client debug writer failing stops the session safely | ADR-0004 | - | - | - | - | planned | - |
@@ -286,7 +286,7 @@ accepted_exception
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
 | OPS-010 | Repository structure as decided at the repository design gate | ADR-0001 | repository tree | - | - | docs/adr/ADR-0001-repository-structure.md | implemented | - |
-| OPS-020 | `protocol/` carries no ML dependency | ADR-0001 | `protocol/` | - | - | - | planned | enforced from Phase 1 by the OPS-030 test |
+| OPS-020 | `protocol/` carries no ML dependency | ADR-0001 | protocol/ | - | - | - | implemented | protocol/ imports nothing beyond pydantic and the stdlib |
 | OPS-030 | Cross-worker imports are forbidden and enforced by a conformance test | ADR-0001 | - | tests/conformance/ import boundary | - | - | planned | test written in Phase 1 |
 | OPS-040 | The server isolates gateway, orchestrator, asr-worker, speechbrain-worker, diarization-worker and translation-service; not all ML frameworks in one process | ADR-0007 | - | - | - | - | planned | 5 lazily created venvs; built from Phase 4 onward |
 | OPS-100 | One Git branch per phase, merged to `main` only after the phase report is approved | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | branch phase/00-repository-audit |
@@ -348,7 +348,7 @@ accepted_exception
 | SEC-040 | Use environment variables or local secret files excluded by Git | - | .gitignore | - | - | .gitignore | implemented | - |
 | SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | ADR-0011 | - | - | - | - | planned | no automatic deletion; tools/purge_meeting.py plus an audit line (D28) |
 | SEC-060 | Sanitize filenames and session metadata | ADR-0011 | - | - | - | - | planned | - |
-| SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | frame 16 KB, event 64 KB, text 8192 chars, id 64 chars, 1 session; queue depth benchmark_required |
+| SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py; frame ceiling tested, others not yet |
 | SEC-080 | Validate all client and worker messages | - | - | - | - | - | planned | - |
 | SEC-090 | Treat transcription and translation as confidential meeting data | ADR-0011 | - | - | - | - | planned | - |
 | SEC-100 | Add no telemetry that sends meeting data externally | - | - | - | - | - | planned | - |

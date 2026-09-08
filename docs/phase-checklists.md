@@ -73,8 +73,8 @@ Gates to clear in dependency order. Each produces an ADR before any code.
 | 1.3 | Binary WebSocket header, resume contract, backpressure, error codes, version compatibility | Section 26 item 3 | ✅ ADR-0010 |
 | 1.4 | Log and event schema, retention | Section 26 item 14 | ✅ ADR-0011 |
 | 1.5 | Test taxonomy detail, split manifest format, annotation guide skeleton | Section 26 item 22 | ✅ ADR-0012 |
-| 1.6 | `protocol/` implemented with schema validation | — | ☐ |
-| 1.7 | Category B conformance vectors for envelope, header, revisions, sizes | TEST-130 | ☐ |
+| 1.6 | `protocol/` implemented with schema validation | — | ✅ |
+| 1.7 | Category B conformance vectors for envelope, header, revisions, sizes | TEST-130 | ✅ 102 passed |
 | 1.8 | Category A pure-function tests on codec and projection | TEST-010 | ☐ |
 | 1.9 | Import-boundary conformance test | OPS-030 | ☐ |
 | 1.10 | Clip cutter with provenance (`tools/hash_file.py` already done) | TEST-030 | ☐ |
