@@ -1,0 +1,26 @@
+# core.autocrlf=true on the Windows dev machine would otherwise rewrite line
+# endings in protocol golden files, JSONL fixtures and captured replay data,
+# invalidating their recorded SHA-256 provenance (requirements.md Section 22.2).
+
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.jsonl text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.toml  text eol=lf
+*.txt   text eol=lf
+*.in    text eol=lf
+*.sh    text eol=lf
+*.ps1   text eol=crlf
+
+*.wav          binary
+*.mp3          binary
+*.m4a          binary
+*.flac         binary
+*.bin          binary
+*.safetensors  binary
+*.ct2          binary
+*.onnx         binary
