@@ -131,17 +131,35 @@ class SyncResult:
     orphaned: list[Row] = field(default_factory=list)
 
 
+CELL_SEPARATOR = re.compile(r"(?<!\\)\|")
+
+
+def _escape_cell(value: str) -> str:
+    """Escape pipes so a cell cannot silently split a row into extra columns."""
+    return value.replace("|", r"\|")
+
+
+def _unescape_cell(value: str) -> str:
+    return value.replace(r"\|", "|")
+
+
 def _split_markdown_row(line: str) -> list[str]:
-    """Split a Markdown table row into stripped cell values."""
+    """Split a Markdown table row into stripped cell values.
+
+    Splits on unescaped pipes only. A note that legitimately contains a pipe -
+    "create | revise | split" - would otherwise turn one row into thirteen
+    cells, and the row would then fail the column-count check and be silently
+    treated as a new requirement on the next sync.
+    """
     stripped = line.strip()
     if not stripped.startswith("|"):
         return []
     # Drop the leading and trailing pipe before splitting so empty edge cells
     # do not appear.
     body = stripped[1:]
-    if body.endswith("|"):
+    if body.endswith("|") and not body.endswith(r"\|"):
         body = body[:-1]
-    return [cell.strip() for cell in body.split("|")]
+    return [_unescape_cell(cell.strip()) for cell in CELL_SEPARATOR.split(body)]
 
 
 def _is_separator_row(cells: list[str]) -> bool:
@@ -173,9 +191,13 @@ def parse_existing_matrix(path: Path) -> dict[str, Row]:
     """Return existing traceability rows keyed by requirement ID."""
     if not path.is_file():
         return {}
+    return parse_existing_matrix_from_text(path.read_text(encoding="utf-8"))
 
+
+def parse_existing_matrix_from_text(text: str) -> dict[str, Row]:
+    """Parse a rendered matrix. Separated from the file read so a round trip is testable."""
     existing: dict[str, Row] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         cells = _split_markdown_row(line)
         if len(cells) != len(COLUMNS) or _is_separator_row(cells):
             continue
@@ -222,7 +244,9 @@ def sync(catalogue: dict[str, str], existing: dict[str, Row]) -> SyncResult:
 def _render_table(rows: list[Row]) -> list[str]:
     lines = ["| " + " | ".join(COLUMNS) + " |"]
     lines.append("|" + "|".join(["---"] * len(COLUMNS)) + "|")
-    lines.extend("| " + " | ".join(row.cells()) + " |" for row in rows)
+    lines.extend(
+        "| " + " | ".join(_escape_cell(cell) for cell in row.cells()) + " |" for row in rows
+    )
     return lines
 
 

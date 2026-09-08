@@ -24,8 +24,8 @@ accepted_exception
 | Status | Count |
 |---|---|
 | planned | 269 |
-| implemented | 19 |
-| tested | 0 |
+| implemented | 17 |
+| tested | 2 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
 | blocked_real_fixture | 3 |
@@ -109,7 +109,7 @@ accepted_exception
 | PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-220 | The session orchestrator is the sole authority creating `utterance_id` and `segment_id` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | segment allocated eagerly when the utterance opens (D10) |
 | PROT-230 | Whisper subsegment and token-timestamp local IDs never become public `segment_id` values | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | operation: create | revise | split | merge | seal |
+| PROT-240 | Split and merge operations carry explicit lineage fields (`parent_segment_ids`, `operation`) | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | operation: create \| revise \| split \| merge \| seal |
 | PROT-250 | A revision retains the same `segment_id`; a new `segment_id` is created only when a split cannot be represented as a revision | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | on split the original keeps its ID and narrows (D11) |
 | PROT-260 | Every current segment projection carries `content_revision`, `language_revision`, `speaker_revision`, `translation_revision`, `translated_from_content_revision`, `translated_from_language_revision` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-270 | Revision dependency rules: content change invalidates translation; language change invalidates translation and requires revalidation; speaker-only change does not | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | content or language invalidates translation; speaker never does |
@@ -379,10 +379,10 @@ accepted_exception
 | TEST-190 | Steady-state GPU benchmarks separate cold start, warm-up, repeated runs and concurrent workload, and report median, P95 and maximum | - | - | - | - | - | planned | - |
 | TEST-200 | Every client test report gives the exact command, environment summary, fixture/capture ID and SHA-256, passed/failed/skipped counts, duration, output artifact paths and known limitations | - | - | - | - | - | planned | - |
 | TEST-210 | Every source component has tests appropriate to its behaviour; a behavioural case absent from real data is reported as a coverage gap, never synthesized | - | - | - | - | - | planned | - |
-| TEST-220 | Maintain `docs/traceability.md`, mapping every requirement to ADR, implementation, test, fixture, evidence and status | - | tools/traceability_sync.py | - | - | docs/traceability.md | implemented | - |
-| TEST-230 | Never mark a requirement `tested` without evidence | - | tools/traceability_sync.py | - | - | - | implemented | the sync tool refuses a tested row with no evidence |
+| TEST-220 | Maintain `docs/traceability.md`, mapping every requirement to ADR, implementation, test, fixture, evidence and status | - | tools/traceability_sync.py | tests/conformance/test_traceability_sync.py | - | 24 passed, dev machine, 2026-09-08 | tested | - |
+| TEST-230 | Never mark a requirement `tested` without evidence | - | tools/traceability_sync.py | tests/conformance/test_traceability_sync.py | - | 24 passed, dev machine, 2026-09-08 | tested | asserted by test_no_requirement_is_marked_tested_without_evidence |
 | TEST-240 | `accepted_exception` requires explicit user approval, rationale, risk and a tracked follow-up | - | - | - | - | - | planned | - |
-| TEST-250 | A phase cannot be declared complete while mandatory requirement IDs are unmapped or falsely marked tested | - | - | - | - | - | planned | - |
+| TEST-250 | A phase cannot be declared complete while mandatory requirement IDs are unmapped or falsely marked tested | - | - | tests/conformance/test_traceability_sync.py | - | - | planned | a removed ID is orphaned, never silently dropped |
 | TEST-260 | Never treat Whisper, Qwen, SpeechBrain or pyannote output as ground truth | - | - | - | - | docs/test-data.md | implemented | policy recorded; no model output has been used as a reference |
 | TEST-270 | Ground-truth annotations record reviewer, timestamp, source hash, clip interval and annotation version | - | - | - | - | - | planned | - |
 
