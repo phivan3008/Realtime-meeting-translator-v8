@@ -48,7 +48,7 @@ accepted_exception
 | AUD-070 | Avoid repeated WAV headers in the stream | - | - | - | - | - | planned | - |
 | AUD-080 | Add monotonically increasing sequence numbers and monotonic capture timestamps | - | - | - | - | - | planned | - |
 | AUD-090 | Detect callback starvation, device removal, overrun, underrun and resampler failure | - | - | - | - | - | planned | - |
-| AUD-100 | Bounded ring buffer with an explicit overflow policy | - | - | - | - | - | planned | - |
+| AUD-100 | Bounded ring buffer with an explicit overflow policy | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | overflow drops the oldest unsent frame and emits audio.gap (D22) |
 | AUD-110 | Never block the audio callback on network I/O, UI rendering, log writing or disk I/O | - | - | - | - | - | planned | - |
 | AUD-120 | Capture lifecycle: IDLE → CONNECTING → READY → CAPTURING → STOPPING → COMPLETED, with ERROR ↔ RECONNECTING | - | - | - | - | - | planned | - |
 | AUD-130 | Log every state transition with timestamp and reason code | - | - | - | - | - | planned | - |
@@ -57,8 +57,8 @@ accepted_exception
 | AUD-160 | Reconnect with bounded exponential backoff | - | - | - | - | - | planned | - |
 | AUD-170 | Preserve a bounded amount of unsent audio across reconnect | ADR-0009 | - | - | - | - | planned | retention size bounds how often resume hits the dropped-buffer branch; Phase 2 |
 | AUD-180 | Attempt session resume within a configurable retention window | ADR-0009 | - | - | - | - | planned | - |
-| AUD-190 | Report unrecoverable audio gaps clearly | ADR-0009 | - | - | - | - | planned | a shortfall against resume_from_sample becomes an explicit audio.gap |
-| AUD-200 | Never silently reorder, duplicate or discard audio | ADR-0009 | - | - | - | - | planned | resume_from_sample beyond anything sent is an integrity error, never accepted |
+| AUD-190 | Report unrecoverable audio gaps clearly | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | a shortfall against resume_from_sample becomes an explicit audio.gap |
+| AUD-200 | Never silently reorder, duplicate or discard audio | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | discarding is permitted; discarding silently is not |
 | AUD-210 | Client/audio metrics: frame count, sequence gaps, ring-buffer overflow, callback delays, capture and resample drift, reconnect recovery and lost duration, CPU and memory, log writer integrity | - | - | - | - | - | planned | - |
 | AUD-220 | Select a correct WASAPI loopback device automatically on an arbitrary Windows user machine, given only Python and the project's dependencies | - | - | - | - | - | planned | - |
 
@@ -87,18 +87,18 @@ accepted_exception
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
 | PROT-010 | Every control event carries `protocol_version`, `event_type`, `session_id`, `event_id`, `sent_at_utc` | - | - | - | - | - | planned | - |
-| PROT-020 | Reject unknown major protocol versions | - | - | - | - | - | planned | - |
-| PROT-030 | Ignore unknown optional fields safely within the same major version | - | - | - | - | - | planned | - |
+| PROT-020 | Reject unknown major protocol versions | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
+| PROT-030 | Ignore unknown optional fields safely within the same major version | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-040 | Implement all 21 event types listed in Section 9.3 | - | - | - | - | - | planned | - |
-| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0009 | - | - | - | - | planned | payload must carry gap counts, synthetic sample total, drain overruns, outcome reasons |
+| PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0009 | - | - | - | - | planned | session.summary payload shape at the G14 log-schema gate |
 | PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
-| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | - | - | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
-| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | - | - | - | - | - | planned | - |
-| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0008 | - | - | - | - | planned | must carry an absolute int64 start_sample (D9); layout at the G3 gate |
-| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0008 | - | - | - | - | planned | layout still open; the field set is fixed by ADR-0008 |
-| PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | - | - | - | - | - | planned | - |
-| PROT-130 | No component creates an unbounded queue | - | - | - | - | - | planned | - |
+| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
+| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | both implemented, config-selected; 20 ms provisional default pending benchmark |
+| PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | 28-byte little-endian header, all fields naturally aligned (D20) |
+| PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | codec tests are pure-function until Phase 4 yields a real capture; gap recorded |
+| PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | cumulative acked_through_sample doubles as the backpressure channel (D21, D22) |
+| PROT-130 | No component creates an unbounded queue | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-140 | Canonical media position is the integer audio sample offset at 16 kHz from session start | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | int64 sample offset at 16 kHz, origin 0 at session start |
 | PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | floor(sample * 1000 / 16000) |
 | PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
@@ -118,8 +118,8 @@ accepted_exception
 | PROT-300 | The protocol carries enough evidence for the client debug log to be a self-sufficient event source | ADR-0004 | - | - | - | - | planned | - |
 | PROT-310 | The protocol specification includes event preconditions and projection pseudocode for every revision-bearing event | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | projection table for every revision-bearing event is in the ADR |
 | PROT-320 | Every missing sequence range creates an `audio.gap` event with expected and received sequence, missing sample estimate and media interval | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | gap_samples = next.start_sample - previous.frame_end_sample |
-| PROT-330 | Maximum frame and event sizes are defined and enforced | - | - | - | - | - | planned | - |
-| PROT-340 | Error codes and version compatibility rules are documented | - | - | - | - | - | planned | - |
+| PROT-330 | Maximum frame and event sizes are defined and enforced | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | frame 16 KB, event 64 KB; exceeding either terminates the connection |
+| PROT-340 | Error codes and version compatibility rules are documented | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | namespaced string error codes; minor versions are additive only (D23) |
 | PROT-350 | The exact resume contract is approved at the protocol design gate | ADR-0009 | - | - | - | - | planned | resume carries last_sent_sequence and last_sent_start_sample; server answers resume_from_sample (D17) |
 | PROT-360 | One utterance may yield zero, one or many text segments; a text segment belongs to exactly one utterance in MVP | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
 | PROT-370 | Qwen translates one accepted text segment at a time, never a raw utterance or a raw Whisper subsegment | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
@@ -315,7 +315,7 @@ accepted_exception
 | OPS-710 | The Session Lifecycle ADR defines stop acknowledgement timeout, ASR flush timeout, translation drain timeout, refinement timeout, worker cancellation behaviour, client behaviour when `session.stopped` is not received, conditions for `completed` / `completed_with_warnings` / `failed`, and the recovery/compaction command after abrupt termination | ADR-0009 | - | - | - | - | planned | four independent wall-clock budgets, all benchmark_required (D18) |
 | OPS-720 | A server restart makes the active meeting unrecoverable; the client emits and persists `session_unrecoverable` and requires a new session | ADR-0009 | - | - | - | - | planned | server_epoch uuid4 echoed on session responses; a changed epoch is a restart (D16) |
 | OPS-730 | The client never resends an entire meeting to a restarted server as if live continuity were preserved | ADR-0009 | - | - | - | - | planned | client compacts what it holds and requires a new session |
-| OPS-740 | Gap policy is configurable by duration class — small: preserve the interval, optionally insert marked silence, attach gap evidence; medium: close the utterance as `truncated_by_gap`, reset VAD, require stricter ASR acceptance; large: invalidate resume continuity, reset VAD and ASR context, require explicit discontinuity or a new stream | ADR-0009 | - | - | - | - | planned | small inserts marked synthetic silence only inside an open utterance (D15) |
+| OPS-740 | Gap policy is configurable by duration class — small: preserve the interval, optionally insert marked silence, attach gap evidence; medium: close the utterance as `truncated_by_gap`, reset VAD, require stricter ASR acceptance; large: invalidate resume continuity, reset VAD and ASR context, require explicit discontinuity or a new stream | ADR-0009 | - | - | - | - | planned | client overflow and network loss share one audio.gap representation |
 | OPS-750 | No implementation decodes across an unreported gap | ADR-0009 | - | - | - | - | planned | enforceable by assertion because gap size is measured, not inferred |
 | OPS-760 | A segment intersecting a gap is not translated unless its accepted final passes the gap-aware quality policy | ADR-0009 | - | - | - | - | planned | gap-intersecting segments are not translated without the gap-aware check |
 | OPS-800 | GPU admission implements the seven-level priority policy of Section 25.11 | - | - | - | - | - | planned | - |
@@ -327,7 +327,7 @@ accepted_exception
 | OPS-860 | A GPU Resource ADR and a user-run server gate precede loading all models concurrently | - | - | - | - | - | planned | - |
 | OPS-900 | Implement the degraded-mode capability matrix exactly as specified in Section 25.12 | - | - | - | - | - | planned | - |
 | OPS-910 | Every degraded mode emits start and end events, updates session capability state, and is visible in the UI | - | - | - | - | - | planned | - |
-| OPS-920 | No component silently substitutes lower-quality behaviour | - | - | - | - | - | planned | - |
+| OPS-920 | No component silently substitutes lower-quality behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | server overload is visible via pipeline.warning and capability.updated |
 | OPS-1000 | All 22 design gates of Section 26 are discussed before the corresponding implementation | - | - | - | - | - | planned | - |
 | OPS-1010 | Numeric acceptance thresholds are established only after a real baseline is measured, reviewed and committed | - | - | - | - | - | planned | - |
 | OPS-1020 | Maintain the full documentation set: architecture overview, sequence diagrams, protocol specification, event schemas, ADRs, environment matrix and lock files, client setup and packaging guide, GPU server setup and model-download guide, SSH tunnel runbook, test-data provenance and annotation guide, server test runbook, benchmark report, troubleshooting guide, privacy and retention notes, third-party inventory and licenses, immutable model revision manifest | - | - | - | - | - | planned | 8 of the required documents exist; the rest follow their phases |
@@ -348,7 +348,7 @@ accepted_exception
 | SEC-040 | Use environment variables or local secret files excluded by Git | - | .gitignore | - | - | .gitignore | implemented | - |
 | SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | - | - | - | - | - | planned | - |
 | SEC-060 | Sanitize filenames and session metadata | - | - | - | - | - | planned | - |
-| SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | - | - | - | - | - | planned | - |
+| SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | frame 16 KB, event 64 KB, text 8192 chars, id 64 chars, 1 session; queue depth benchmark_required |
 | SEC-080 | Validate all client and worker messages | - | - | - | - | - | planned | - |
 | SEC-090 | Treat transcription and translation as confidential meeting data | - | - | - | - | - | planned | - |
 | SEC-100 | Add no telemetry that sends meeting data externally | - | - | - | - | - | planned | - |
