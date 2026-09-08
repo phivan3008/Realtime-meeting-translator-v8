@@ -23,17 +23,17 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 269 |
+| planned | 268 |
 | implemented | 17 |
 | tested | 2 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
-| blocked_real_fixture | 3 |
+| blocked_real_fixture | 4 |
 | failed | 0 |
 | accepted_exception | 0 |
 | **total** | **291** |
 
-269 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+268 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
@@ -267,17 +267,17 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| PERS-010 | `meeting_<session-id>_debug.jsonl` is the append-only authoritative event log | - | - | - | - | - | planned | - |
-| PERS-020 | The debug log includes session lifecycle, client and server status, audio gaps and acknowledgements, VAD events, partial revisions, final and corrected transcription, speaker revisions, language decisions and evidence, overlap intervals, ASR quality evidence, translation lifecycle, errors, warnings, latency metadata, and model/config/version identifiers | - | - | - | - | - | planned | - |
+| PERS-010 | `meeting_<session-id>_debug.jsonl` is the append-only authoritative event log | ADR-0011 | - | - | - | - | planned | wrapper record; payload is the wire event verbatim (D25) |
+| PERS-020 | The debug log includes session lifecycle, client and server status, audio gaps and acknowledgements, VAD events, partial revisions, final and corrected transcription, speaker revisions, language decisions and evidence, overlap intervals, ASR quality evidence, translation lifecycle, errors, warnings, latency metadata, and model/config/version identifiers | ADR-0011 | - | - | - | - | planned | record_kind wire_event \| client_local \| integrity_conflict |
 | PERS-030 | `meeting_<session-id>_history.jsonl` is a live projection carrying no authority; `meeting_<session-id>_history.final.jsonl` is the compacted deliverable | ADR-0004 | - | - | - | - | planned | three-file set decided; schema at the Phase 1 log gate |
 | PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | ADR-0009 | - | - | - | - | planned | - |
-| PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | - | - | - | - | - | planned | - |
-| PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | - | - | - | - | - | planned | - |
-| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0009 | - | - | - | - | planned | rebuild uses the same shared reducer as the UI and the compaction (D13) |
-| PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | - | - | - | - | - | planned | - |
-| PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | - | - | - | - | - | planned | - |
-| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | - | - | - | - | - | planned | - |
-| PERS-110 | Raw audio persistence is disabled by default; in explicit diagnostic mode the log records path, sample count, format and SHA-256 | - | - | - | - | - | planned | - |
+| PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | ADR-0011 | - | - | - | - | planned | - |
+| PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | ADR-0011 | - | - | - | - | planned | write+flush per record; fsync at critical boundaries and on an interval (D29) |
+| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0011 | - | - | - | - | planned | rebuild is read, unwrap, fold with the same reducer the UI uses |
+| PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | ADR-0011 | - | - | - | - | planned | log_seq makes a truncated tail distinguishable from a clean close (D26) |
+| PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | ADR-0011 | - | - | - | - | planned | missing, duplicate and regressing log_seq are three distinct vectors |
+| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | ADR-0011 | - | - | - | - | planned | session id validated against a strict pattern before it reaches a path |
+| PERS-110 | Raw audio persistence is disabled by default; in explicit diagnostic mode the log records path, sample count, format and SHA-256 | ADR-0011 | - | - | - | - | planned | - |
 | PERS-120 | Audio files, meeting logs and benchmark raw outputs are never committed to Git | - | .gitignore | - | - | .gitignore | implemented | - |
 | PERS-130 | The client debug writer failing stops the session safely | ADR-0004 | - | - | - | - | planned | - |
 
@@ -306,9 +306,9 @@ accepted_exception
 | OPS-500 | Measure and report GPU memory idle and peak by worker, system RAM, ASR real-time factor, ASR queue depth, translation queue depth, translation latency, event-loop lag, dropped/rejected audio frames, utterance processing latency, worker restart count | - | - | - | - | - | planned | - |
 | OPS-510 | Warm models before an active meeting when possible | - | - | - | - | - | planned | - |
 | OPS-520 | Bound all queues; GPU out-of-memory produces explicit failure and recovery, never silent process-wide corruption | - | - | - | - | - | planned | - |
-| OPS-530 | All services use structured logs carrying session ID, stream ID, segment ID, event ID, revision, service and worker, monotonic processing timestamps and UTC correlation time | - | - | - | - | - | planned | - |
+| OPS-530 | All services use structured logs carrying session ID, stream ID, segment ID, event ID, revision, service and worker, monotonic processing timestamps and UTC correlation time | ADR-0011 | - | - | - | - | planned | - |
 | OPS-540 | Metrics exportable in Prometheus-compatible form where practical | - | - | - | - | - | planned | - |
-| OPS-550 | Sensitive audio and text excluded from normal operational logs unless debug content logging is explicitly enabled | - | - | - | - | - | planned | - |
+| OPS-550 | Sensitive audio and text excluded from normal operational logs unless debug content logging is explicitly enabled | ADR-0011 | - | - | - | - | planned | server log redacts text as {redacted, chars}; no hash fingerprint (D27) |
 | OPS-600 | All tunable values externalized into validated configuration | - | - | - | - | - | planned | 3 gap thresholds, 4 stop budgets and seal_window_samples are all benchmark_required; startup refuses without them |
 | OPS-610 | Every debug log and benchmark artifact includes a configuration hash | - | - | - | - | - | planned | - |
 | OPS-700 | Graceful stop executes the full sequence: reject frames after final sequence, close or reject incomplete gap ranges, flush the active VAD utterance, final-decode if minimum speech requirements are met, complete/retry/cancel translation within a bounded drain timeout, run bounded pending refinement, seal remaining segments, emit `session.summary`, emit `session.stopped`, close persistence projection atomically | ADR-0009 | - | - | - | - | planned | ASR flush, then translation drain, then refinement; per-stage budgets |
@@ -346,13 +346,13 @@ accepted_exception
 | SEC-020 | Never expose an unauthenticated public WebSocket endpoint | - | - | - | - | - | planned | - |
 | SEC-030 | Never print or commit model access tokens, SSH secrets or environment credentials | - | .gitignore | - | - | .gitignore | implemented | no token has been printed or committed |
 | SEC-040 | Use environment variables or local secret files excluded by Git | - | .gitignore | - | - | .gitignore | implemented | - |
-| SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | - | - | - | - | - | planned | - |
-| SEC-060 | Sanitize filenames and session metadata | - | - | - | - | - | planned | - |
+| SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | ADR-0011 | - | - | - | - | planned | no automatic deletion; tools/purge_meeting.py plus an audit line (D28) |
+| SEC-060 | Sanitize filenames and session metadata | ADR-0011 | - | - | - | - | planned | - |
 | SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | frame 16 KB, event 64 KB, text 8192 chars, id 64 chars, 1 session; queue depth benchmark_required |
 | SEC-080 | Validate all client and worker messages | - | - | - | - | - | planned | - |
-| SEC-090 | Treat transcription and translation as confidential meeting data | - | - | - | - | - | planned | - |
+| SEC-090 | Treat transcription and translation as confidential meeting data | ADR-0011 | - | - | - | - | planned | - |
 | SEC-100 | Add no telemetry that sends meeting data externally | - | - | - | - | - | planned | - |
-| SEC-110 | Use safe file paths and atomic writes | - | - | - | - | - | planned | - |
+| SEC-110 | Use safe file paths and atomic writes | ADR-0011 | - | - | - | - | planned | - |
 
 ## TEST - testing, fixtures, evaluation
 
@@ -365,26 +365,26 @@ accepted_exception
 | TEST-050 | Claude Code executes client tests locally when the environment permits, and reports the missing real-device gate when it does not | - | - | - | - | - | planned | - |
 | TEST-060 | The ten-step server test gate procedure is followed for every server phase | - | - | - | - | - | planned | - |
 | TEST-070 | No CER, WER, DER, BLEU, chrF or COMET before human references exist | - | - | - | - | docs/test-data.md | blocked_real_fixture | no human ground truth exists |
-| TEST-080 | An annotation workflow and manifest format exist before reference metrics | - | - | - | - | - | planned | - |
-| TEST-090 | A representative subset may be annotated before the full recording | - | - | - | - | - | planned | - |
-| TEST-100 | The subset covers Japanese, Vietnamese, multiple speakers, silence, low volume, clipped speech, hesitation, incomplete sentences, overlap, rapid speaker changes and noise | - | - | - | - | - | planned | - |
+| TEST-080 | An annotation workflow and manifest format exist before reference metrics | ADR-0012 | - | - | - | - | planned | one JSONL per annotation session, immutable, versioned (D32) |
+| TEST-090 | A representative subset may be annotated before the full recording | ADR-0012 | - | - | - | - | planned | - |
+| TEST-100 | The subset covers Japanese, Vietnamese, multiple speakers, silence, low volume, clipped speech, hesitation, incomplete sentences, overlap, rapid speaker changes and noise | ADR-0012 | - | - | - | - | planned | - |
 | TEST-110 | Create human-reviewed real cases for the sixteen hallucination categories of Section 22.6; report an absent category as unavailable and never synthesize it | - | - | - | - | docs/test-data.md | blocked_real_fixture | availability table is UNKNOWN until the recording is reviewed |
 | TEST-120 | Tests are classified into exactly three categories: A real ML/E2E, B labelled protocol/security/persistence negative vectors, C real-capture replay | - | - | - | - | docs/test-taxonomy.md | implemented | - |
 | TEST-130 | Category B fixtures are labelled `protocol_conformance_fixture` or `negative_test_vector`, are never represented as meeting data, and never support an ASR, language, speaker, overlap or translation quality claim | - | - | - | - | docs/test-taxonomy.md | planned | labelling rule defined; no vector exists yet |
-| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | - | - | - | - | - | planned | - |
-| TEST-150 | The real recording is split into non-overlapping development, validation and locked evaluation ranges, balanced across the available acoustic and linguistic conditions | - | - | - | - | - | blocked_real_fixture | the split needs the recording |
-| TEST-160 | The locked evaluation set is never used for threshold tuning | - | - | - | - | - | planned | - |
-| TEST-170 | The annotation guide defines filler and hesitation transcription, false starts and self-corrections, punctuation and casing, Japanese number representation and tokenization, Vietnamese orthography, English and technical term handling, unintelligible markers, overlap and speaker-unknown notation, timestamp precision, literal-versus-natural translation principles, and reviewer identity, version and adjudication | - | - | - | - | - | planned | - |
-| TEST-180 | A full-recording soak test over 30 minutes examines memory growth, queues, GPU fragmentation, segment and speaker ID uniqueness, revision integrity, JSONL validity, translation backlog, deadlock and graceful shutdown | - | - | - | - | - | planned | recording is 30m 21.21s, so the >30 min soak requirement is satisfiable by the whole file |
-| TEST-190 | Steady-state GPU benchmarks separate cold start, warm-up, repeated runs and concurrent workload, and report median, P95 and maximum | - | - | - | - | - | planned | - |
+| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | ADR-0012 | - | - | - | - | planned | - |
+| TEST-150 | The real recording is split into non-overlapping development, validation and locked evaluation ranges, balanced across the available acoustic and linguistic conditions | ADR-0012 | - | - | - | - | blocked_real_fixture | interleaved blocks with boundaries at long silences; locked assigned first (D30) |
+| TEST-160 | The locked evaluation set is never used for threshold tuning | ADR-0012 | - | - | - | - | planned | fixture loader refuses locked clips without an explicit flag; every access audited (D31) |
+| TEST-170 | The annotation guide defines filler and hesitation transcription, false starts and self-corrections, punctuation and casing, Japanese number representation and tokenization, Vietnamese orthography, English and technical term handling, unintelligible markers, overlap and speaker-unknown notation, timestamp precision, literal-versus-natural translation principles, and reviewer identity, version and adjudication | ADR-0012 | - | - | - | - | blocked_real_fixture | guide_version recorded in every annotation header |
+| TEST-180 | A full-recording soak test over 30 minutes examines memory growth, queues, GPU fragmentation, segment and speaker ID uniqueness, revision integrity, JSONL validity, translation backlog, deadlock and graceful shutdown | ADR-0012 | - | - | - | - | planned | whole 1821.208 s; assertions need no ground truth (D33) |
+| TEST-190 | Steady-state GPU benchmarks separate cold start, warm-up, repeated runs and concurrent workload, and report median, P95 and maximum | ADR-0012 | - | - | - | - | planned | cold, warm, repeated and concurrent measured separately; median, P95, max |
 | TEST-200 | Every client test report gives the exact command, environment summary, fixture/capture ID and SHA-256, passed/failed/skipped counts, duration, output artifact paths and known limitations | - | - | - | - | - | planned | - |
 | TEST-210 | Every source component has tests appropriate to its behaviour; a behavioural case absent from real data is reported as a coverage gap, never synthesized | - | - | - | - | - | planned | - |
 | TEST-220 | Maintain `docs/traceability.md`, mapping every requirement to ADR, implementation, test, fixture, evidence and status | - | tools/traceability_sync.py | tests/conformance/test_traceability_sync.py | - | 24 passed, dev machine, 2026-09-08 | tested | - |
 | TEST-230 | Never mark a requirement `tested` without evidence | - | tools/traceability_sync.py | tests/conformance/test_traceability_sync.py | - | 24 passed, dev machine, 2026-09-08 | tested | asserted by test_no_requirement_is_marked_tested_without_evidence |
 | TEST-240 | `accepted_exception` requires explicit user approval, rationale, risk and a tracked follow-up | - | - | - | - | - | planned | - |
 | TEST-250 | A phase cannot be declared complete while mandatory requirement IDs are unmapped or falsely marked tested | - | - | tests/conformance/test_traceability_sync.py | - | - | planned | a removed ID is orphaned, never silently dropped |
-| TEST-260 | Never treat Whisper, Qwen, SpeechBrain or pyannote output as ground truth | - | - | - | - | docs/test-data.md | implemented | policy recorded; no model output has been used as a reference |
-| TEST-270 | Ground-truth annotations record reviewer, timestamp, source hash, clip interval and annotation version | - | - | - | - | - | planned | - |
+| TEST-260 | Never treat Whisper, Qwen, SpeechBrain or pyannote output as ground truth | ADR-0012 | - | - | - | docs/test-data.md | implemented | policy recorded; no model output has been used as a reference |
+| TEST-270 | Ground-truth annotations record reviewer, timestamp, source hash, clip interval and annotation version | ADR-0012 | - | - | - | - | planned | annotation files immutable; a correction is a new versioned session |
 
 ## Accepted exceptions
 
