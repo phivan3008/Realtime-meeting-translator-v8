@@ -3,3 +3,7 @@
 ruff
 mypy
 pytest
+
+# tools/ run on the dev machine and read the YAML manifests.
+pyyaml
+types-PyYAML

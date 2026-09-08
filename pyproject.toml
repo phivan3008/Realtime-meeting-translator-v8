@@ -24,6 +24,9 @@ select = [
     "RUF",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["protocol", "client", "server", "tools", "tests"]
+
 [tool.ruff.format]
 docstring-code-format = true
 
