@@ -24,11 +24,11 @@ accepted_exception
 | Status | Count |
 |---|---|
 | planned | 269 |
-| implemented | 16 |
+| implemented | 19 |
 | tested | 0 |
 | test_script_ready | 0 |
-| blocked_environment | 2 |
-| blocked_real_fixture | 4 |
+| blocked_environment | 0 |
+| blocked_real_fixture | 3 |
 | failed | 0 |
 | accepted_exception | 0 |
 | **total** | **291** |
@@ -43,7 +43,7 @@ accepted_exception
 | AUD-020 | Let the user select the capture device | - | - | - | - | - | planned | - |
 | AUD-030 | Capture output audio using PyAudioWPatch WASAPI loopback | - | - | - | - | - | planned | - |
 | AUD-040 | Validate sample format, channel count, sample rate and device availability | - | - | - | - | - | planned | - |
-| AUD-050 | Convert captured audio to mono PCM signed 16-bit little-endian at 16 kHz | - | - | - | - | - | planned | - |
+| AUD-050 | Convert captured audio to mono PCM signed 16-bit little-endian at 16 kHz | - | - | - | - | - | planned | the real recording is already mono pcm_s16le 16 kHz, so fixture and wire format coincide |
 | AUD-060 | Use a streaming-quality resampler with persistent state across chunks | - | - | - | - | - | planned | - |
 | AUD-070 | Avoid repeated WAV headers in the stream | - | - | - | - | - | planned | - |
 | AUD-080 | Add monotonically increasing sequence numbers and monotonic capture timestamps | - | - | - | - | - | planned | - |
@@ -93,7 +93,7 @@ accepted_exception
 | PROT-050 | `session.summary` extension event, forced by the graceful-stop sequence | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
 | PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | - | - | - | - | planned | extension event; schema at the Phase 1 protocol gate |
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
-| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | - | - | - | - | - | planned | - |
+| PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | - | - | - | - | - | planned | matches the recording exactly; a replay can send its samples verbatim |
 | PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | - | - | - | - | - | planned | - |
 | PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | - | - | - | - | - | planned | - |
 | PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | - | - | - | - | - | planned | - |
@@ -169,10 +169,10 @@ accepted_exception
 | ASR-180 | Publish the final only after acceptance processing | - | - | - | - | - | planned | - |
 | ASR-190 | Whisper context may contain only bounded recent **accepted** final transcription — never translation, rejected, low-confidence or partial text | - | - | - | - | - | planned | - |
 | ASR-200 | Reset or shorten context after long silence, strong language switch, detected repetition, session boundary, or context budget exhaustion | - | - | - | - | - | planned | - |
-| ASR-210 | faster-whisper / CTranslate2 is the production backend | - | - | - | - | - | planned | - |
+| ASR-210 | faster-whisper / CTranslate2 is the production backend | - | - | - | - | - | planned | cached Systran CT2 build vs in-project conversion is a Phase 6 gate |
 | ASR-220 | Transformers is a reference comparison on a manageable, human-reviewed subset only | - | - | - | - | - | planned | - |
 | ASR-230 | A design gate reopens backend choice only if measured quality differs materially | - | - | - | - | - | planned | - |
-| ASR-240 | Every benchmark artifact records model repository, revision/commit, tokenizer, backend version, compute type and decode parameters | - | - | - | - | - | planned | - |
+| ASR-240 | Every benchmark artifact records model repository, revision/commit, tokenizer, backend version, compute type and decode parameters | - | - | - | - | - | planned | 4 cached models have revisions chosen by other work; must be read off disk and pinned |
 | ASR-250 | Implement all nine defensive hallucination layers | - | - | - | - | - | planned | - |
 | ASR-260 | Audio validity gate rejects or flags: missing sequence ranges, all-zero or near-zero content, excessive clipping, invalid duration, invalid numeric values after conversion, resampling failure, extremely low RMS, too little detected speech, truncation by disconnection, unsafe maximum-duration cut | - | - | - | - | - | planned | - |
 | ASR-270 | Collect decode evidence where available: `avg_logprob`, `no_speech_prob`, `compression_ratio`, `speech_ratio`, `temperature_used`, `language_id` | - | - | - | - | - | planned | - |
@@ -219,7 +219,7 @@ accepted_exception
 | SPK-040 | Never create or update a speaker profile from segments that are too short, silence or weak filler, heavily overlapped, extremely noisy, rejected by audio validity checks, or damaged by an experimental separator | - | - | - | - | - | planned | - |
 | SPK-050 | Speaker labels on active and partial segments are provisional and revisable | - | - | - | - | - | planned | - |
 | SPK-060 | `speaker.updated` events support retrospective merge and relabel | - | - | - | - | - | planned | - |
-| SPK-070 | Pyannote is isolated and used for overlap detection, speaker-change evidence, retrospective refinement and controlled comparison | - | - | - | - | - | planned | - |
+| SPK-070 | Pyannote is isolated and used for overlap detection, speaker-change evidence, retrospective refinement and controlled comparison | - | - | - | - | - | planned | pyannote gating conditions accepted 2026-09-08; download proves the token at the Phase 8 gate |
 | SPK-080 | Pyannote never replaces Silero as the live endpointing component | - | - | - | - | - | planned | - |
 | SPK-090 | Pyannote never silently overwrites timeline labels without a versioned correction event | - | - | - | - | - | planned | - |
 | SPK-100 | Never assume a fixed speaker count | - | - | - | - | - | planned | - |
@@ -244,9 +244,9 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| TRN-010 | Pin exact Qwen repository, instruct/base variant, immutable revision, tokenizer, chat template, license and access requirements, compatible vLLM version, dtype and context length | ADR-0006 | - | - | - | docs/model-inventory.md | planned | identity verified 2026-09-08; immutable revision pending Phase 10 |
+| TRN-010 | Pin exact Qwen repository, instruct/base variant, immutable revision, tokenizer, chat template, license and access requirements, compatible vLLM version, dtype and context length | ADR-0006 | - | - | - | docs/model-inventory.md | planned | identity accepted 2026-09-08; weights already cached; revision still unpinned |
 | TRN-020 | Qwen thinking/reasoning output is disabled | ADR-0006 | - | - | - | - | planned | thinking is ON by default upstream; disable per request AND validate output |
-| TRN-030 | The immutable model revision is recorded in the manifest and in every benchmark artifact | ADR-0006 | - | - | - | - | planned | revision read from the pod at download time |
+| TRN-030 | The immutable model revision is recorded in the manifest and in every benchmark artifact | ADR-0006 | - | - | - | - | planned | read the resolved SHA out of /workspace/cache/hub, not from the model page |
 | TRN-040 | Runtime parameters are benchmarked on the H100, not assumed; use the smallest context sufficient for live translation | ADR-0006 | - | - | - | - | planned | max_model_len 4096 is a candidate, not a decision |
 | TRN-050 | Translation is invoked only after accepted final ASR | - | - | - | - | - | planned | - |
 | TRN-060 | Every request states source language and code, target language and code, the current final source text, bounded accepted context if enabled, translate-only instruction, preservation of names/numbers/dates/URLs/code/identifiers, no added information, no invented source correction, and a defined response schema | - | - | - | - | - | planned | - |
@@ -288,7 +288,7 @@ accepted_exception
 | OPS-010 | Repository structure as decided at the repository design gate | ADR-0001 | repository tree | - | - | docs/adr/ADR-0001-repository-structure.md | implemented | - |
 | OPS-020 | `protocol/` carries no ML dependency | ADR-0001 | `protocol/` | - | - | - | planned | enforced from Phase 1 by the OPS-030 test |
 | OPS-030 | Cross-worker imports are forbidden and enforced by a conformance test | ADR-0001 | - | tests/conformance/ import boundary | - | - | planned | test written in Phase 1 |
-| OPS-040 | The server isolates gateway, orchestrator, asr-worker, speechbrain-worker, diarization-worker and translation-service; not all ML frameworks in one process | ADR-0007 | - | - | - | - | blocked_environment | mechanism proposed; blocked on the GPU sharing answer |
+| OPS-040 | The server isolates gateway, orchestrator, asr-worker, speechbrain-worker, diarization-worker and translation-service; not all ML frameworks in one process | ADR-0007 | - | - | - | - | planned | 5 lazily created venvs; built from Phase 4 onward |
 | OPS-100 | One Git branch per phase, merged to `main` only after the phase report is approved | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | branch phase/00-repository-audit |
 | OPS-110 | Run the full repository inspection set before every commit | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | inspection set run before every commit |
 | OPS-120 | Never force push, rewrite shared history, rebase a shared branch unasked, discard user changes, or use destructive reset/clean/checkout | ADR-0002 | - | - | - | docs/adr/ADR-0002-git-workflow.md | implemented | - |
@@ -296,11 +296,11 @@ accepted_exception
 | OPS-210 | Execute the full phase completion sequence at the end of every phase | - | - | - | - | - | planned | first full run at the Phase 1 gate |
 | OPS-220 | Static checks never substitute for behavioural tests | - | - | - | - | - | planned | - |
 | OPS-300 | The environment inspection is a mandatory design gate; no CUDA, PyTorch, CTranslate2, SpeechBrain, pyannote, vLLM or driver version is locked before returned output exists | ADR-0007 | - | - | - | docs/environment-matrix.md | implemented | pod inspected 2026-09-08; no version locked |
-| OPS-310 | Deployment isolation mechanism selected only after pod inspection | ADR-0007 | - | - | - | - | blocked_environment | ADR proposed; needs the user decision on GPU sharing |
-| OPS-320 | Check disk, license, access requirements and model revision before downloading any model | ADR-0007 | - | - | - | docs/model-inventory.md | implemented | licenses and gating verified; disk budget recorded; revisions pending download |
+| OPS-310 | Deployment isolation mechanism selected only after pod inspection | ADR-0007 | - | - | - | docs/adr/ADR-0007-gpu-pod-environment-and-deployment-isolation.md | implemented | venv + supervised subprocesses, accepted 2026-09-08 |
+| OPS-320 | Check disk, license, access requirements and model revision before downloading any model | ADR-0007 | - | - | - | docs/model-inventory.md | implemented | licenses, gating and disk verified; 4 of 6 models already cached; revisions still unpinned |
 | OPS-330 | Dependencies pinned reproducibly per dependency domain after the target environment is known | ADR-0007 | requirements/ | - | - | - | planned | dev toolchain locked; each runtime domain locked at its phase gate |
-| OPS-340 | Benchmarks run under GPU contention are labelled as such, and no acceptance threshold is derived from them | ADR-0007 | - | - | - | - | planned | applies to every GPU benchmark while the card is shared |
-| OPS-350 | Hugging Face cache stays on the persistent volume (`HF_HOME=/workspace/cache`) | ADR-0007 | - | - | - | - | planned | HF_HOME is already /workspace/cache on the pod |
+| OPS-340 | Benchmarks run under GPU contention are labelled as such, and no acceptance threshold is derived from them | ADR-0007 | - | - | - | - | planned | S2: other vLLM stopped per gate; artifacts must show a clear card |
+| OPS-350 | Hugging Face cache stays on the persistent volume (`HF_HOME=/workspace/cache`) | ADR-0007 | - | - | - | docs/environment-matrix.md | implemented | HF_HOME=/workspace/cache verified on the pod |
 | OPS-400 | Every approved design gate produces a committed decision record | ADR-0000 | - | - | - | docs/adr/ADR-TEMPLATE.md | implemented | - |
 | OPS-410 | An ADR reaches `accepted` only by explicit user approval | ADR-0000 | - | - | - | docs/adr/ADR-0000-adr-format-and-decision-process.md | implemented | - |
 | OPS-500 | Measure and report GPU memory idle and peak by worker, system RAM, ASR real-time factor, ASR queue depth, translation queue depth, translation latency, event-loop lag, dropped/rejected audio frames, utterance processing latency, worker restart count | - | - | - | - | - | planned | - |
@@ -342,7 +342,7 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| SEC-010 | Bind server ports to localhost for SSH tunnel use unless another secure architecture is approved | - | - | - | - | - | planned | - |
+| SEC-010 | Bind server ports to localhost for SSH tunnel use unless another secure architecture is approved | ADR-0007 | - | - | - | - | planned | 8760 gateway, 8761+ worker IPC, 8000 vLLM, all 127.0.0.1; confirmed bindable |
 | SEC-020 | Never expose an unauthenticated public WebSocket endpoint | - | - | - | - | - | planned | - |
 | SEC-030 | Never print or commit model access tokens, SSH secrets or environment credentials | - | .gitignore | - | - | .gitignore | implemented | no token has been printed or committed |
 | SEC-040 | Use environment variables or local secret files excluded by Git | - | .gitignore | - | - | .gitignore | implemented | - |
@@ -358,9 +358,9 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| TEST-010 | All behavioural and model-quality tests use real data; the supplied meeting recording is the canonical input | - | - | - | - | docs/test-data.md | blocked_real_fixture | recording not yet on the dev machine |
-| TEST-020 | Allowed fixtures are: the original real recording, clips from it with provenance, real captured WebSocket events, a replay of those events, human-reviewed annotations, and pure-function input extracted from real captures | - | - | - | - | docs/test-data.md | planned | - |
-| TEST-030 | Every derived audio fixture records `source_file_sha256`, `start_ms`, `end_ms`, `clip_sha256`, human-reviewed `labels`, `reviewed_by`, `reviewed_at` | - | - | - | - | docs/test-data.md | planned | tools/hash_file.py written in Phase 1 |
+| TEST-010 | All behavioural and model-quality tests use real data; the supplied meeting recording is the canonical input | - | - | - | - | tests/manifests/source-recordings.yaml | planned | recording present and hash-verified; no test consumes it yet |
+| TEST-020 | Allowed fixtures are: the original real recording, clips from it with provenance, real captured WebSocket events, a replay of those events, human-reviewed annotations, and pure-function input extracted from real captures | - | - | - | - | tests/manifests/source-recordings.yaml | planned | - |
+| TEST-030 | Every derived audio fixture records `source_file_sha256`, `start_ms`, `end_ms`, `clip_sha256`, human-reviewed `labels`, `reviewed_by`, `reviewed_at` | - | tools/hash_file.py | - | - | tests/manifests/source-recordings.yaml | implemented | hash, format and canonical sample count recorded for meeting-001 |
 | TEST-040 | Never mock ASR/LID/speaker/diarization/translation output in a quality test, ask an LLM to invent expected output, modify expected output to match the implementation, claim server tests passed without real artifacts, silently skip a failing test, or use synthetic audio to trigger edge cases | - | - | - | - | - | planned | - |
 | TEST-050 | Claude Code executes client tests locally when the environment permits, and reports the missing real-device gate when it does not | - | - | - | - | - | planned | - |
 | TEST-060 | The ten-step server test gate procedure is followed for every server phase | - | - | - | - | - | planned | - |
@@ -375,7 +375,7 @@ accepted_exception
 | TEST-150 | The real recording is split into non-overlapping development, validation and locked evaluation ranges, balanced across the available acoustic and linguistic conditions | - | - | - | - | - | blocked_real_fixture | the split needs the recording |
 | TEST-160 | The locked evaluation set is never used for threshold tuning | - | - | - | - | - | planned | - |
 | TEST-170 | The annotation guide defines filler and hesitation transcription, false starts and self-corrections, punctuation and casing, Japanese number representation and tokenization, Vietnamese orthography, English and technical term handling, unintelligible markers, overlap and speaker-unknown notation, timestamp precision, literal-versus-natural translation principles, and reviewer identity, version and adjudication | - | - | - | - | - | planned | - |
-| TEST-180 | A full-recording soak test over 30 minutes examines memory growth, queues, GPU fragmentation, segment and speaker ID uniqueness, revision integrity, JSONL validity, translation backlog, deadlock and graceful shutdown | - | - | - | - | - | planned | - |
+| TEST-180 | A full-recording soak test over 30 minutes examines memory growth, queues, GPU fragmentation, segment and speaker ID uniqueness, revision integrity, JSONL validity, translation backlog, deadlock and graceful shutdown | - | - | - | - | - | planned | recording is 30m 21.21s, so the >30 min soak requirement is satisfiable by the whole file |
 | TEST-190 | Steady-state GPU benchmarks separate cold start, warm-up, repeated runs and concurrent workload, and report median, P95 and maximum | - | - | - | - | - | planned | - |
 | TEST-200 | Every client test report gives the exact command, environment summary, fixture/capture ID and SHA-256, passed/failed/skipped counts, duration, output artifact paths and known limitations | - | - | - | - | - | planned | - |
 | TEST-210 | Every source component has tests appropriate to its behaviour; a behavioural case absent from real data is reported as a coverage gap, never synthesized | - | - | - | - | - | planned | - |

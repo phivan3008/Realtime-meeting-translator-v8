@@ -1,10 +1,10 @@
 # ADR-0006: Qwen translation model identity
 
-- **Status:** proposed — identity verified, runtime profile requires a server test gate
+- **Status:** accepted for identity; the runtime profile remains `proposed` until its server test gate
 - **Date:** 2026-09-08
 - **Design gate:** `requirements.md` Section 26, item 21
 - **Requirement IDs:** TRN-010, TRN-020, TRN-030, TRN-040, OPS-320
-- **Decided by:** pending user approval (decision D7, option B: verify at the gate, early)
+- **Decided by:** user on 2026-09-08 (decision D7, option B, verified early)
 
 ## Context and constraints
 
@@ -161,6 +161,11 @@ vllm:
   repository's commit SHA, which is best done on the pod at download time so the
   recorded SHA matches the bytes actually loaded. This is an obligation on the
   first Phase 10 server gate, tracked as TRN-030.
+- The weights are **already in `/workspace/cache/hub/models--Qwen--Qwen3.5-9B`**
+  on the pod, left by other work there. That removes an ~18 GB download from the
+  Phase 10 gate, but it also means the cached revision was chosen by someone
+  else. The resolved commit SHA must be read from the cache and recorded before
+  any benchmark, not assumed to be the current `main`.
 - `max_model_len: 4096` is a candidate, not a decision. If a real accepted final
   transcript segment plus the enabled context ever approaches it, the profile is
   wrong and the gate will show it.
@@ -195,6 +200,7 @@ are returned by the user.
 ## Open questions
 
 - The immutable revision SHA. Pinned at the first Phase 10 server gate.
-- Whether the pod's existing vLLM instance on port 8001 may be reused or must be
-  replaced by a project-controlled instance. Deferred to ADR-0007, because it is
-  a GPU-resource question as much as a model-identity one.
+- ~~Whether the pod's existing vLLM instance on port 8001 may be reused.~~
+  **Resolved by ADR-0007: no.** The user selected option S2, so that instance is
+  stopped during our gates rather than borrowed. This project launches its own
+  vLLM with a recorded configuration.

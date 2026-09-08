@@ -5,7 +5,7 @@ from a command whose output is reproduced below. Values marked `UNKNOWN` are
 genuinely not yet known and must not be guessed
 (`requirements.md` Section 7, `CLAUDE.md` Section 5).
 
-Last updated: 2026-09-08, Phase 0.
+Last updated: 2026-09-08, Phase 0 (second pass, after the follow-up pod inspection).
 
 ---
 
@@ -42,20 +42,24 @@ the directory is a working copy.
 | Sound devices | NVIDIA Virtual Audio Device (Wave Extensible) (WDM); Realtek High Definition Audio; NVIDIA High Definition Audio — all `OK` |
 | `pyaudiowpatch` | **not installed** |
 | `PySide6` | **not installed** |
-| Installed packages | `pip 24.0`, `setuptools 65.5.0` only — no project venv exists yet |
+| System Python packages | `pip 24.0`, `setuptools 65.5.0` only |
+| Project venv | `.venv/`, Python 3.11.9, pip 26.2.1 — ruff 0.16.6, mypy 2.3.1, pytest 9.1.1 (`requirements/dev.lock.txt`) |
+| Real meeting recording | `data/recordings/meeting_record.wav`, mono `pcm_s16le` 16 kHz, 30m 21.21s |
 
 ### Notes
 
-- No virtual environment exists on the dev machine yet. One is created at the
-  start of Phase 1, pinned per ADR-0003.
+- `.venv/` holds the development toolchain only. No runtime or ML dependency
+  is installed on this machine.
 - `ffmpeg` is absent and is needed by `tools/` for cutting real clips with
   recorded provenance (`requirements.md` Section 22.2). Either install it or
   cut clips with a pure-Python `soundfile`/`numpy` path. Decided at the Phase 1
   tooling step; the pure-Python path is preferred because it removes an external
   binary from the fixture-provenance chain.
 - The dev machine has real output devices, so WASAPI loopback *enumeration* and
-  *capture of whatever is playing locally* can be exercised here. What it cannot
-  provide is the real meeting recording. See `docs/test-data.md`.
+  *capture of whatever is playing locally* can be exercised here. Capturing a
+  real meeting still belongs on the user machine.
+- The real meeting recording is present and hash-verified. See
+  `docs/test-data.md`.
 
 ---
 
@@ -135,7 +139,74 @@ GPU0     X      0-127           0-1             N/A
 Single GPU, so no NVLink or multi-GPU scheduling concerns. `tensor_parallel_size`
 is 1 by necessity, not by choice.
 
-### 3.4 Filesystem detail
+### 3.4 Hugging Face cache contents — verified 2026-09-08
+
+`HF_HOME=/workspace/cache`, total **44 G**. `du -sh` and `ls -1` returned:
+
+```text
+/workspace/cache/
+  datasets/
+  hub/
+    CACHEDIR.TAG
+    datasets--japanese-asr--ja_asr.reazon_speech_all
+    models--MIT--ast-finetuned-audioset-10-10-0.4593
+    models--Qwen--Qwen3.5-9B
+    models--Systran--faster-whisper-large-v3
+    models--google--gemma-4-12b-it
+    models--speechbrain--lang-id-voxlingua107-ecapa
+    models--speechbrain--spkrec-ecapa-voxceleb
+  stored_tokens
+  token
+  xet/
+```
+
+**Four of the six models this project needs are already cached**, left behind by
+earlier work on the pod:
+
+| Needed by this project | Cached | Note |
+|---|---|---|
+| Qwen translation | ✅ `models--Qwen--Qwen3.5-9B` | the exact repository ADR-0006 pins |
+| ASR | ✅ `models--Systran--faster-whisper-large-v3` | the **CTranslate2 conversion**, not the original `openai/whisper-large-v3`. See below. |
+| Language ID | ✅ `models--speechbrain--lang-id-voxlingua107-ecapa` | |
+| Speaker embedding | ✅ `models--speechbrain--spkrec-ecapa-voxceleb` | |
+| pyannote segmentation and diarization | ❌ | conditions now accepted; download at the Phase 8 gate |
+| Silero VAD | ❌ | not a Hugging Face repository |
+
+`models--google--gemma-4-12b-it`, `models--MIT--ast-finetuned-audioset-...` and
+the ReazonSpeech dataset belong to other work on this pod. This project neither
+uses nor removes them.
+
+**`Systran/faster-whisper-large-v3` is a Phase 6 design-gate question, not a
+free win.** `requirements.md` Section 4.2 names `openai/whisper-large-v3`
+downloaded from Hugging Face, with faster-whisper/CTranslate2 as the production
+backend. The Systran repository is the pre-converted CT2 build of that model.
+Using it saves roughly 6 GB and a conversion step; converting ourselves gives a
+conversion whose parameters we chose and recorded. Section 13.5 requires the
+model repository, revision, tokenizer, backend version and compute type in every
+benchmark artifact, and either path can satisfy that. The choice belongs at the
+Phase 6 gate and is not made here.
+
+`/workspace/cache/token` and `stored_tokens` exist, so a Hugging Face token is
+already configured on the pod. Neither file has been read, printed or committed
+(SEC-030).
+
+### 3.5 Localhost port availability — verified 2026-09-08
+
+```text
+127.0.0.1:8760 bindable
+127.0.0.1:8761 bindable
+127.0.0.1:8762 bindable
+127.0.0.1:8000 bindable
+```
+
+Port 8001 is held by the other project's vLLM, and port 3000 by its uvicorn
+service. Both are avoided.
+
+`ss` and `netstat` are **both missing** from the pod. Runbook diagnostics must
+therefore use `/proc/net/tcp` or a Python socket probe rather than assuming
+either tool exists.
+
+### 3.6 Filesystem detail
 
 ```text
 Filesystem                                              Size  Used Avail Use% Mounted on
@@ -158,16 +229,18 @@ Two things to carry forward:
 
 | # | Unknown | How it gets resolved | Blocks |
 |---|---|---|---|
-| U1 | Whether the other project's vLLM can be stopped during our server gates | user decision | ADR-0007, all GPU benchmarks, Phase 12 |
-| U2 | Contents and size of `/workspace/cache` | `du -sh /workspace/cache; ls -1 /workspace/cache` | model download plan, disk budget |
-| U3 | Which localhost ports are bindable | corrected bind script in ADR-0007 | Phase 1 protocol, Phase 4 |
-| U4 | Whether `ss`/`netstat` exist on the pod | `command -v ss; command -v netstat` | runbook diagnostics |
+| ~~U1~~ | ~~GPU sharing policy~~ | **RESOLVED 2026-09-08: option S2.** The other vLLM is stopped for the duration of each server test gate and restarted afterwards. | — |
+| ~~U2~~ | ~~Contents and size of `/workspace/cache`~~ | **RESOLVED 2026-09-08.** 44 G; four of six needed models already cached. See §3.4. | — |
+| ~~U3~~ | ~~Which localhost ports are bindable~~ | **RESOLVED 2026-09-08.** 8760, 8761, 8762, 8000 bindable. See §3.5. | — |
+| ~~U4~~ | ~~Whether `ss`/`netstat` exist~~ | **RESOLVED 2026-09-08: both missing.** Runbooks use `/proc/net/tcp` or a socket probe. | — |
 | U5 | torch / CTranslate2 / faster-whisper versions | verify official guidance at Phase 6 gate | Phase 6 |
 | U6 | SpeechBrain version and whether `speechbrain.pretrained` or `speechbrain.inference` is current | verify at Phase 7 gate | Phase 7 |
 | U7 | pyannote.audio version | verify at Phase 8 gate; card requires `>=3.1` | Phase 8 |
 | U8 | vLLM version and whether it can coexist with a CTranslate2 CUDA context | verify at Phase 10 gate | Phase 10 |
 | U9 | onnxruntime viability for Silero VAD on CPU | verify at Phase 5 gate | Phase 5 |
-| U10 | Real recording: path, format, sample rate, channels, duration, SHA-256 | user copies it to the dev machine; `tools/hash_file.py` | every category A test |
+| ~~U10~~ | ~~Real recording format and hash~~ | **RESOLVED 2026-09-08.** `meeting_record.wav`, mono `pcm_s16le` 16 kHz, 29,139,328 samples, 30m 21.21s, SHA-256 `9f4e36d1...7625`. See `docs/test-data.md`. | — |
+| U13 | Whether the pre-converted `Systran/faster-whisper-large-v3` is used, or `openai/whisper-large-v3` is converted in-project | Phase 6 design gate | Phase 6 |
+| U14 | Where the recording lands on the pod, and its re-verified hash there | copy through the VS Code SSH UI, then `tools/hash_file.py --expect-sha256` | first server gate that needs real audio |
 | U11 | Whether the SSH tunnel to the pod is already established by VS Code port forwarding, and on which local port | user confirmation | Phase 11 end-to-end |
 | U12 | Whether ffmpeg may be installed on the dev machine, or clips are cut in pure Python | Phase 1 tooling decision | fixture creation |
 
@@ -259,11 +332,33 @@ stack size                  (kbytes, -s) 8192
 cpu time                   (seconds, -t) unlimited
 ```
 
-### 6.7 Checks that returned nothing or failed
+### 6.7 Follow-up inspection, 2026-09-08
 
-- `ss -tlnp` produced empty output. Whether the tool is missing or simply
-  reported nothing is not distinguishable from the output; see U4.
-- The localhost port-bind script failed on a transcription error
-  (`s.bind("127.0.0.1", p)` — two arguments instead of one tuple) and returned
-  `TypeError: socket.bind() takes exactly one argument (2 given)`. No port
-  information was obtained; see U3 and the corrected script in ADR-0007.
+The first pass left two checks unresolved. Both were re-run.
+
+`ss -tlnp` had produced empty output; the cause was that the tool is absent:
+
+```text
+ss missing
+netstat missing
+```
+
+The localhost port-bind script had failed on a transcription error
+(`s.bind("127.0.0.1", p)` — two arguments instead of one tuple), returning
+`TypeError: socket.bind() takes exactly one argument (2 given)`. Re-run with the
+corrected form:
+
+```text
+127.0.0.1:8760 bindable
+127.0.0.1:8761 bindable
+127.0.0.1:8762 bindable
+127.0.0.1:8000 bindable
+```
+
+Cache inspection:
+
+```text
+44G     /workspace/cache/
+```
+
+with the `hub/` listing reproduced in §3.4.

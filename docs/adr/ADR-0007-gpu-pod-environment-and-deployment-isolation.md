@@ -1,10 +1,10 @@
 # ADR-0007: GPU pod environment and deployment isolation
 
-- **Status:** proposed — requires user decision on GPU sharing before it can be accepted
+- **Status:** accepted
 - **Date:** 2026-09-08
 - **Design gate:** `requirements.md` Section 26, item 2
 - **Requirement IDs:** OPS-300, OPS-310, OPS-320, OPS-330, OPS-340, OPS-350
-- **Decided by:** pending
+- **Decided by:** user on 2026-09-08 (GPU sharing: option S2)
 
 ## Context and constraints
 
@@ -140,10 +140,12 @@ As B, plus: no environment is created before the phase that uses it.
 Cheapest. But peak-memory and latency numbers are contaminated by a neighbour we
 do not control, and Section 25.15 benchmark requirements cannot be honestly met.
 
-#### Option S2 — the user stops the other vLLM during our server test gates
+#### Option S2 — the user stops the other vLLM during our server test gates — SELECTED
 
 Gives a clean card for the duration of a gate. Costs the other project's
-availability for the length of a test run.
+availability for the length of a test run. With the full 81,559 MiB available,
+the memory budget below stops constraining the design and becomes just a number
+to measure.
 
 #### Option S3 — reuse the already-running vLLM on port 8001 as our translation backend
 
@@ -192,20 +194,27 @@ Docker is available and would work; it is declined for the MVP on disk and
 build-time grounds, and because the code-transport path to this pod is VS Code
 copy-paste, which suits a plain directory far better than an image build.
 
-### 2. GPU sharing — Option S2 recommended
+### 2. GPU sharing — Option S2, selected by the user on 2026-09-08
 
-**Recommendation: the other project's vLLM is stopped for the duration of each
-of our server test gates, and restarted afterwards.**
+**The other project's vLLM is stopped for the duration of each of our server
+test gates, and restarted afterwards.**
 
 Reasoning: Section 25.11 makes final ASR starvation the thing to prevent, and
 Section 25.15 requires distribution metrics (median, P95, maximum) that mean
 nothing when an uncontrolled process holds 55% of the card. A gate typically
 runs for minutes, not hours, so the cost to the other project is bounded.
 
-If the user cannot stop it, Option S1 is workable for functional correctness
-testing but the resulting numbers must be labelled as measured under contention,
-and no acceptance threshold may be derived from them. That labelling obligation
-is recorded against OPS-340.
+Two operational consequences follow, and both belong in the server runbook:
+
+- Every server test gate's instructions begin with stopping the other vLLM and
+  end with restarting it, and the gate's artifacts include an `nvidia-smi`
+  capture taken **after** the stop, proving the card was clear when the run
+  started. A benchmark whose artifacts do not show a clear card is labelled as
+  measured under contention, and no acceptance threshold may be derived from it
+  (OPS-340).
+- Between gates the card returns to the other project, so this project must not
+  leave a model resident. Worker startup and shutdown are part of the gate
+  procedure, not a persistent service.
 
 Option S3 is rejected outright: an instance we do not control cannot produce a
 reproducible benchmark artifact.
@@ -233,22 +242,29 @@ onnxruntime: "verify at Phase 5 gate"
 Nothing above is installed until its phase's gate, per Section 7 and
 `CLAUDE.md` Section 5.
 
-### 4. Storage plan
+### 4. Storage plan — revised 2026-09-08 after inspecting the cache
 
-`/workspace` has 99 G available and is NFS-mounted. Projected consumption:
+`/workspace` has 99 G available and is NFS-mounted. `/workspace/cache` already
+holds 44 G, and **four of the six models this project needs are in it**, left by
+earlier work on the pod: `Qwen/Qwen3.5-9B`, `Systran/faster-whisper-large-v3`,
+`speechbrain/lang-id-voxlingua107-ecapa` and `speechbrain/spkrec-ecapa-voxceleb`.
 
-| Item | Estimate |
-|---|---|
-| Qwen3.5-9B weights | ~18 GB — *possibly already in `/workspace/cache`; to be confirmed* |
-| whisper-large-v3 original + CTranslate2 conversion | ~6 GB |
-| SpeechBrain models | ~1 GB |
-| pyannote models | ~1 GB |
-| 4 torch-bearing venvs | ~12-16 GB |
-| vLLM installation | ~8-10 GB |
-| **Total** | **~46-52 GB**, or ~28-34 GB if the Qwen weights are already cached |
+Remaining projected consumption:
 
-This fits, but not by a wide margin, which is the second reason to create
-environments lazily rather than all at once.
+| Item | Estimate | Note |
+|---|---|---|
+| Qwen3.5-9B weights | **0 GB** | already cached |
+| ASR model | **0 GB** using the cached Systran CT2 build; ~6 GB if `openai/whisper-large-v3` is downloaded and converted in-project | Phase 6 gate decides |
+| SpeechBrain models | **0 GB** | both already cached |
+| pyannote models | ~1 GB | conditions accepted 2026-09-08; not yet downloaded |
+| Silero VAD | <0.1 GB | |
+| 4 torch-bearing venvs | ~12-16 GB | |
+| vLLM installation | ~8-10 GB | |
+| **Total** | **~21-27 GB**, or ~27-33 GB if the ASR model is converted in-project | |
+
+Against 99 G available this is comfortable. The earlier disk-pressure concern is
+resolved. Lazy environment creation is kept for the dependency-attribution
+reason, not the disk reason.
 
 `HF_HOME=/workspace/cache` is already set correctly and must not be changed —
 it keeps weights on the persistent volume and off the ephemeral root filesystem.
@@ -282,50 +298,43 @@ Rollback stays cheap indefinitely, provided service startup is expressed as a
 command plus an environment path rather than as a hard-coded interpreter
 location. Runbooks therefore parameterise the interpreter path.
 
+### 5. Port allocation
+
+Verified bindable on 2026-09-08: `127.0.0.1:8760`, `8761`, `8762`, `8000`.
+Port 8001 is the other project's vLLM and port 3000 its uvicorn service; both
+are avoided permanently, not only during gates.
+
+Proposed allocation, to be confirmed at the Phase 1 protocol gate:
+
+```yaml
+gateway_websocket: 8760      # the only port the SSH tunnel forwards
+worker_ipc_base:   8761      # 8761, 8762, ... as workers are added
+vllm_openai_api:   8000      # this project's own vLLM, not the one on 8001
+```
+
+All bind to `127.0.0.1` only (SEC-010, SEC-020).
+
+Neither `ss` nor `netstat` exists on the pod. Runbook diagnostics use
+`cat /proc/net/tcp` or a Python socket probe, never those tools.
+
 ## Evidence required before `accepted`
 
-1. The user's answer on GPU sharing (S1, S2 or something else).
-2. Confirmation of what is already in `/workspace/cache`:
+All satisfied on 2026-09-08:
 
-   ```bash
-   du -sh /workspace/cache 2>/dev/null || echo "no /workspace/cache"
-   ls -1 /workspace/cache/hub 2>/dev/null || ls -1 /workspace/cache 2>/dev/null
-   df -h /workspace
-   ```
-
-3. A corrected localhost port-bind check. The version run on 2026-09-08 failed
-   on a transcription error (`s.bind("127.0.0.1", p)` instead of
-   `s.bind(("127.0.0.1", p))`) and returned no result. Correct version:
-
-   ```bash
-   python3 - <<'PY'
-   import socket
-   for p in (8760, 8761, 8762, 8770, 8000, 8001):
-       s = socket.socket()
-       try:
-           s.bind(("127.0.0.1", p))
-           print(f"127.0.0.1:{p} bindable")
-       except OSError as e:
-           print(f"127.0.0.1:{p} NOT bindable: {e}")
-       finally:
-           s.close()
-   PY
-   ```
-
-4. Whether `ss` or `netstat` is available (both returned empty output):
-
-   ```bash
-   command -v ss || echo "ss missing"
-   command -v netstat || echo "netstat missing"
-   cat /proc/net/tcp | head -5
-   ```
+1. ~~GPU sharing answer~~ - option S2 selected.
+2. ~~Cache contents~~ - 44 G, four of six models present. See
+   `docs/environment-matrix.md` section 3.4.
+3. ~~Port bind check~~ - 8760, 8761, 8762, 8000 bindable. See section 3.5.
+   The first attempt had failed on a transcription error
+   (`s.bind("127.0.0.1", p)` instead of `s.bind(("127.0.0.1", p))`).
+4. ~~`ss` / `netstat` availability~~ - both missing.
 
 ## Open questions
 
-- GPU sharing policy. Blocking; see "Evidence required".
-- Whether the other project's `/workspace/meeting-translator` service on port
-  3000 will remain running, so our port allocation avoids it.
+- ~~GPU sharing policy.~~ Resolved: S2.
 - Whether Silero VAD via ONNX Runtime is viable at the accuracy the project
   needs, versus the torch build. Phase 5 gate.
-- Exact port allocation for gateway and worker IPC. Phase 1 protocol gate and
-  Phase 4.
+- Whether the cached `Systran/faster-whisper-large-v3` CT2 build is used, or
+  `openai/whisper-large-v3` is downloaded and converted in-project. Phase 6
+  gate; recorded as U13 in the environment matrix.
+- Final port allocation. Phase 1 protocol gate.

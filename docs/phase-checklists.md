@@ -27,7 +27,9 @@ evidence.
 | 0.12 | Record model licenses, access conditions and gating | `docs/model-inventory.md` | ✅ |
 | 0.13 | Record real-data provenance plan and current gaps | `docs/test-data.md` | ✅ |
 | 0.14 | Dev toolchain installed, pinned, and the gate sequence run green | `pyproject.toml`, `requirements/dev.lock.txt`, `scripts/check.sh`, `scripts/check.ps1` | ✅ |
-| 0.15 | Commit and push, report branch and commit hash | phase report | ✅ |
+| 0.15 | Verify the real recording and record its provenance | `tools/hash_file.py`, `tests/manifests/source-recordings.yaml` | ✅ |
+| 0.16 | Close the environment gate: ADR-0006 and ADR-0007 accepted | ADR status lines, `docs/environment-matrix.md` | ✅ |
+| 0.17 | Commit and push, report branch and commit hash | phase report | ✅ |
 
 **Not done in Phase 0, by design:**
 
@@ -39,12 +41,24 @@ evidence.
 - No test executed - there is nothing to test yet. `pytest` collects zero
   items, which the gate script reports rather than hides.
 
-**Open at the end of Phase 0:**
+**Closed on 2026-09-08, second pass:**
 
-- ADR-0006 (Qwen identity) is `proposed`; the immutable revision is unpinned.
-- ADR-0007 (environment and deployment) is `proposed` and blocked on the GPU
-  sharing decision.
-- The real meeting recording is not on the dev machine.
+- ADR-0006 accepted for identity. Weights are already cached on the pod; the
+  immutable revision remains unpinned until Phase 10 reads it off disk.
+- ADR-0007 accepted. GPU sharing is option S2: the other project's vLLM is
+  stopped for the duration of each server test gate.
+- The real recording is on the dev machine, hash-verified, and already in the
+  canonical wire format. See `tests/manifests/source-recordings.yaml`.
+- pyannote gating conditions accepted by the user.
+
+**Still open at the end of Phase 0:**
+
+- No human has listened to the recording, so all sixteen condition categories
+  and the evaluation split remain UNKNOWN.
+- Four cached models carry revisions chosen by other work on the pod; each must
+  be read off disk and pinned before it backs a benchmark.
+- Whether the cached `Systran/faster-whisper-large-v3` is used or
+  `openai/whisper-large-v3` is converted in-project: Phase 6 gate.
 
 ---
 
@@ -63,7 +77,7 @@ Gates to clear in dependency order. Each produces an ADR before any code.
 | 1.7 | Category B conformance vectors for envelope, header, revisions, sizes | TEST-130 | ☐ |
 | 1.8 | Category A pure-function tests on codec and projection | TEST-010 | ☐ |
 | 1.9 | Import-boundary conformance test | OPS-030 | ☐ |
-| 1.10 | `tools/hash_file.py` and the clip cutter | TEST-030 | ☐ |
+| 1.10 | Clip cutter with provenance (`tools/hash_file.py` already done) | TEST-030 | ☐ |
 | 1.11 | Format, lint, type-check, tests, traceability, commit, push | Section 28 | ☐ |
 
 **Blocked in Phase 1:** every category C test, until a real WebSocket capture

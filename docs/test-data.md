@@ -14,22 +14,53 @@ Last updated: 2026-09-08 (Phase 0).
 
 | Asset | Status | Location |
 |---|---|---|
-| Real meeting recording | **not yet on the dev machine** | user machine |
+| Real meeting recording | **present and verified** | `data/recordings/meeting_record.wav` |
 | Derived clips | none | — |
 | Real WebSocket capture | none — no server exists yet | — |
 | Human-reviewed annotations | none | — |
-| Evaluation split manifest | none | — |
+| Evaluation split manifest | structure only, no ranges | `tests/manifests/source-recordings.yaml` |
 
-Nothing in this project has a real fixture yet. Every category A and category C
-test is therefore `blocked_real_fixture`, and that is the honest status rather
-than a gap to fill by invention (`requirements.md` Section 22.3).
+### The recording
+
+Copied to the dev machine on 2026-09-08 and verified by
+`python tools/hash_file.py data/recordings/meeting_record.wav`:
+
+| Property | Value |
+|---|---|
+| SHA-256 | `9f4e36d146c442f926307a8ff0e6841594ca788505c2949eedb5bfe1a8007625` |
+| Size | 58,278,700 bytes |
+| Container / codec | WAV / `pcm_s16le` |
+| Sample rate | **16,000 Hz** |
+| Channels | **1 (mono)** |
+| Frames | 29,139,328 |
+| Duration | 1821.208 s = **30m 21.21s** |
+
+The hash matches the `Get-FileHash` value produced independently on the source
+machine, so the bytes survived the copy intact.
+
+Two properties of this file matter to the design, not just to the test plan:
+
+1. **It is already in the canonical wire format.** Mono `pcm_s16le` at 16 kHz is
+   exactly what PROT-080 puts on the wire. A server-side replay can send the
+   file's sample data verbatim as wire frames, with no resampling and no
+   downmix in between. The fixture timeline *is* the canonical sample timeline
+   of PROT-140, with sample offset 0 at the first frame and 29,139,328 samples
+   in total. Nothing about the fixture can drift from what the server sees.
+2. **It is long enough for the mandatory soak test.** Section 25.15 requires a
+   full-recording soak test of more than 30 minutes (TEST-180). At 30m 21s this
+   file satisfies that by about 21 seconds — enough, but with no room to trim.
+   A soak test must therefore use the whole file, not a subset.
+
+What is still missing is everything a human has to supply: which languages
+occur where, how many speakers, and where the sixteen hallucination categories
+of Section 22.6 appear. None of it may be inferred from a model (TEST-260).
 
 ---
 
-## 2. The recording needs to be copied to the dev machine
+## 2. Why the recording lives on the dev machine
 
-**Yes — please copy it.** It is needed here, not only on the user machine, for
-four reasons:
+Done on 2026-09-08. It is needed here, not only on the user machine, for four
+reasons:
 
 1. Clips cannot be cut and hashed without the source file. Every category A
    fixture derives from clips with recorded provenance (TEST-030).
@@ -41,66 +72,49 @@ four reasons:
    behaviour under real input, gap handling — can then run on the dev machine
    without occupying the user machine.
 
-**Where to put it:**
+**Location:** `data/recordings/`, which `.gitignore` excludes. Confirmed:
 
 ```text
-F:\workspaces\fpt\projects\whalelm\Realtime-meeting-translator-v8\data\recordings\
+$ git check-ignore -v data/recordings/meeting_record.wav
+.gitignore:47:recordings/       data/recordings/meeting_record.wav
 ```
 
-`data/` is excluded from Git by `.gitignore`, so copying the recording there
-cannot result in it being committed. Verify after copying:
-
-```powershell
-git status --short          # the recording must NOT appear
-git check-ignore -v data/recordings/<filename>
-```
-
-The second command should print the `.gitignore` rule that excludes it. If it
-prints nothing, stop and report it — that would mean the file is committable.
-
-**What is also useful:** the same recording eventually needs to reach the pod
-for server-side category A tests. It travels the same way the source does, by
-copy through the VS Code SSH UI into `/workspace/` — never through Git.
+**Still to do:** the same recording needs to reach the pod for server-side
+category A tests, by copy through the VS Code SSH UI into `/workspace/` — never
+through Git. Its hash is re-verified on arrival, so a truncated or mangled
+transfer is caught before it silently becomes a bad benchmark.
 
 ---
 
-## 3. Recording the provenance (answers "how do I get the SHA-256")
+## 3. Recording the provenance
 
-Once the file is in `data/recordings/`, run this on the dev machine. It needs no
-dependencies beyond the Python standard library:
-
-```powershell
-python tools/hash_file.py data\recordings\<filename>
-```
-
-`tools/hash_file.py` does not exist yet — it is written at the start of Phase 1,
-along with the clip cutter. Until then, the SHA-256 alone can be obtained with
-either of these, which are built into Windows and Git Bash respectively:
+`tools/hash_file.py` reads the format from the file header and computes the
+hash, using only the standard library:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 data\recordings\<filename>
+python tools/hash_file.py data\recordings\meeting_record.wav
+python tools/hash_file.py data\recordings\meeting_record.wav --yaml
+python tools/hash_file.py data\recordings\meeting_record.wav --expect-sha256 <sha>
 ```
 
-```bash
-sha256sum data/recordings/<filename>
-```
+`--yaml` emits the block for `tests/manifests/source-recordings.yaml`.
+`--expect-sha256` exits non-zero on a mismatch, which is how the file is
+re-verified after it is copied to another machine.
 
-Beyond the hash, the following must be recorded before the file is used as a
-fixture source. Most of it comes from reading the file header, which is what
-`tools/hash_file.py` will do:
+The recorded fields:
 
 ```yaml
 filename: required
 sha256: required
-bytes: required
+size_bytes: required
 container: required          # wav, m4a, mp3, ...
 codec: required
 sample_rate_hz: required
 channels: required
 duration_seconds: required
-recorded_at: if known
-languages_present: [ja, vi]  # as observed, not assumed
-speakers_estimated: as observed
+canonical_16k_samples: required   # length on the PROT-140 timeline
+languages_present: as observed by a human, never inferred by a model
+speakers_estimated: as observed by a human
 notes: anything unusual - clipping, level, background noise
 ```
 
