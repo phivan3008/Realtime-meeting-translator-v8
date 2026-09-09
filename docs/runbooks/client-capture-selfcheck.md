@@ -123,3 +123,44 @@ Paste the **whole** output, including the device line, plus:
 - Anything about transcription, language, speakers or translation.
 - Long-run behaviour. The mandatory soak test is a separate exercise over the
   full 30-minute recording (TEST-180).
+
+---
+
+## Step 3 — converter and frame-duration benchmark
+
+Two values are still `benchmark_required`: which libsamplerate converter to use
+(ADR-0014 D35) and whether the wire frame is 20 ms or 40 ms (D36). Both need real
+captured audio, and the project's recording is already 16 kHz mono — the
+conversion *target* — so it cannot serve as a source for the 48 kHz path real
+devices produce. Live capture is the only real source.
+
+Play the meeting recording, then:
+
+```powershell
+.venv\Scripts\python.exe tools\converter_benchmark.py --seconds 20
+echo $LASTEXITCODE
+```
+
+The tool captures **once** and replays that same buffer through every
+configuration. Two captures of a live meeting are two different pieces of audio,
+and the difference between converters would otherwise be buried under the
+difference between recordings. Nothing is written to disk.
+
+It refuses to run on silence, because measuring a resampler on silence says
+nothing about how it handles speech.
+
+### What it reports
+
+- **per chunk** — median, P95 and maximum cost, with the first 25 chunks
+  discarded as warm-up (Section 25.15 separates cold start from warm running).
+- **cold start** — what the first call cost, reported separately.
+- **realtime** — converter cost as a percentage of the media duration it covered.
+- **deviation** — how far `sinc_fastest` and `sinc_medium` sit from `sinc_best`,
+  in dB. `sinc_best` is the comparison point because it is the most expensive
+  setting available, **not** because it is ground truth. A high figure means the
+  cheaper setting is nearly indistinguishable on this audio.
+
+It makes **no claim about transcription quality**. That needs human references,
+which do not exist (TEST-070).
+
+Send back the whole output plus the exit code.
