@@ -47,6 +47,15 @@ module = ["samplerate"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# PySide6 ships type hints but mypy --strict trips over Qt's Python bindings
+# in ways that say nothing about this project. The UI logic worth checking
+# lives in client/ui/timeline.py and client/ui/updates.py, which have no Qt
+# import at all - which is the same testability argument ADR-0013 made for
+# keeping the network off Qt.
+module = ["PySide6.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # PyAudioWPatch ships no stubs. The slice this project uses is declared as
 # the PyAudioLike protocol in client/devices.py.
 module = ["pyaudiowpatch"]

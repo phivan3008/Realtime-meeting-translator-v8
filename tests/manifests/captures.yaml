@@ -1,0 +1,18 @@
+# Real WebSocket capture fixtures (category C, requirements.md Section 25.15 C).
+#
+# Metadata only. The capture files live under data/captures/ and are never
+# committed (PERS-120). Every entry carries the TEST-140 provenance fields:
+# capture id, location, SHA-256, protocol version, configuration hash, when and
+# from where it was captured, and how many events it holds.
+#
+# EMPTY, and correctly so. Section 25.15 C requires immutable traffic captured
+# from an actual server run. No server exists until Phase 4, so no real capture
+# can exist. Inventing one to make the category C tests green would be exactly
+# the fabricated evidence Section 22.3 forbids.
+#
+# tests/conformance/test_ui_and_replay.py reports this as a visible skip rather
+# than a silent pass.
+
+schema_version: 1
+
+captures: []

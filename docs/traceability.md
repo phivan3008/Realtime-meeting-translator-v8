@@ -23,17 +23,17 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 186 |
+| planned | 173 |
 | implemented | 51 |
-| tested | 49 |
+| tested | 61 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
-| blocked_real_fixture | 5 |
+| blocked_real_fixture | 6 |
 | failed | 0 |
 | accepted_exception | 0 |
 | **total** | **291** |
 
-186 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+173 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
@@ -66,21 +66,21 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| UI-010 | Device selector | - | - | - | - | - | planned | - |
-| UI-020 | Server/tunnel endpoint configuration | - | - | - | - | - | planned | - |
-| UI-030 | Connect/disconnect control | - | - | - | - | - | planned | - |
-| UI-040 | Start/stop meeting control | - | - | - | - | - | planned | - |
-| UI-050 | Current capture and server status visible | - | - | - | - | - | planned | - |
-| UI-060 | Timeline ordered by source audio time | - | - | - | - | - | planned | - |
-| UI-070 | Per segment show: speaker ID, language ID, source start/end time, transcription row, translation row, partial/final state, overlap indicator, low-confidence/warning indicator | - | - | - | - | - | planned | - |
-| UI-080 | Partial transcription visually distinguishable from final | - | - | - | - | - | planned | - |
-| UI-090 | Translation shows a pending state between final ASR and Qwen returning | - | - | - | - | - | planned | - |
-| UI-100 | A translation error never removes or alters the final transcript | - | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_translation_failure_preserves_the_transcript |
-| UI-110 | A retry action may retry failed translation without re-running ASR | - | - | - | - | - | planned | - |
-| UI-120 | Project records by `segment_id` using the Section 25 revision model; ignore and log duplicate and stale events | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | client uses the shared reducer, not its own projection (D13) |
-| UI-130 | A speaker-only revision must not replace newer text, language or translation state | ADR-0008 | protocol/ (Phase 1) | - | - | - | planned | - |
-| UI-140 | Never append every partial as a new permanent line | ADR-0008 | - | - | - | - | planned | one row per segment from first partial to seal, through splits and merges |
-| UI-150 | Degraded mode start and end are visible in the UI | - | - | - | - | - | planned | - |
+| UI-010 | Device selector | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | device selector populated, non-ASCII names intact |
+| UI-020 | Server/tunnel endpoint configuration | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | endpoint field defaults to the localhost tunnel |
+| UI-030 | Connect/disconnect control | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | connect and disconnect invert with the state |
+| UI-040 | Start/stop meeting control | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | start and stop invert with the state |
+| UI-050 | Current capture and server status visible | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | state and its reason are both on screen |
+| UI-060 | Timeline ordered by source audio time | ADR-0013, ADR-0016 | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | ordered by start_sample, never by arrival |
+| UI-070 | Per segment show: speaker ID, language ID, source start/end time, transcription row, translation row, partial/final state, overlap indicator, low-confidence/warning indicator | ADR-0013, ADR-0016 | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | every Section 8.3 field renders, warnings assembled once |
+| UI-080 | Partial transcription visually distinguishable from final | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | a partial is italic and dimmed; a final is not |
+| UI-090 | Translation shows a pending state between final ASR and Qwen returning | ADR-0013, ADR-0016 | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | translating placeholder between final ASR and Qwen |
+| UI-100 | A translation error never removes or alters the final transcript | - | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | a failed translation leaves the transcript untouched |
+| UI-110 | A retry action may retry failed translation without re-running ASR | - | client/ui/app.py | - | - | - | planned | retry action needs a server to retry against; Phase 4 |
+| UI-120 | Project records by `segment_id` using the Section 25 revision model; ignore and log duplicate and stale events | ADR-0013, ADR-0016 | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | upsert by segment_id; an identical row costs no repaint |
+| UI-130 | A speaker-only revision must not replace newer text, language or translation state | ADR-0008, ADR-0016 | protocol/projection.py | - | - | - | planned | enforced by the shared reducer, which the UI does not bypass |
+| UI-140 | Never append every partial as a new permanent line | ADR-0013, ADR-0016 | client/ui/timeline.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | fifty partials produce one row, asserted twice |
+| UI-150 | Degraded mode start and end are visible in the UI | ADR-0013, ADR-0016 | client/ui/app.py | tests/conformance/test_ui_and_replay.py, test_ui_window.py | protocol_conformance_fixture | tests/conformance/, 418 passed, dev machine, 2026-09-09 | tested | warnings reach the status bar |
 
 ## PROT - protocol, timeline, identity, revisions
 
@@ -369,9 +369,9 @@ accepted_exception
 | TEST-090 | A representative subset may be annotated before the full recording | ADR-0012 | - | - | - | - | planned | - |
 | TEST-100 | The subset covers Japanese, Vietnamese, multiple speakers, silence, low volume, clipped speech, hesitation, incomplete sentences, overlap, rapid speaker changes and noise | ADR-0012 | - | - | - | - | planned | - |
 | TEST-110 | Create human-reviewed real cases for the sixteen hallucination categories of Section 22.6; report an absent category as unavailable and never synthesize it | - | - | - | - | docs/test-data.md | blocked_real_fixture | availability table is UNKNOWN until the recording is reviewed |
-| TEST-120 | Tests are classified into exactly three categories: A real ML/E2E, B labelled protocol/security/persistence negative vectors, C real-capture replay | - | - | - | - | docs/test-taxonomy.md | implemented | - |
+| TEST-120 | Tests are classified into exactly three categories: A real ML/E2E, B labelled protocol/security/persistence negative vectors, C real-capture replay | - | client/replay.py | tests/conformance/test_ui_and_replay.py | - | docs/test-taxonomy.md | implemented | all three categories now have code; category C has no fixture |
 | TEST-130 | Category B fixtures are labelled `protocol_conformance_fixture` or `negative_test_vector`, are never represented as meeting data, and never support an ASR, language, speaker, overlap or translation quality claim | - | - | - | - | docs/test-taxonomy.md | planned | labelling rule defined; no vector exists yet |
-| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | ADR-0012 | tools/cut_clip.py | - | - | - | planned | clip provenance implemented; capture provenance waits for Phase 4 |
+| TEST-140 | Replay fixtures include capture provenance, protocol version, configuration hash and SHA-256 | ADR-0012 | client/replay.py | tests/conformance/test_ui_and_replay.py | - | - | blocked_real_fixture | harness verifies hash, protocol version and event count; no capture exists yet |
 | TEST-150 | The real recording is split into non-overlapping development, validation and locked evaluation ranges, balanced across the available acoustic and linguistic conditions | ADR-0012 | - | - | - | - | blocked_real_fixture | interleaved blocks with boundaries at long silences; locked assigned first (D30) |
 | TEST-160 | The locked evaluation set is never used for threshold tuning | ADR-0012 | tools/cut_clip.py | tests/conformance/ | - | tests/conformance/, 168 passed 1 skipped, dev machine, 2026-09-08 | tested | test_cut_clip.py TestLockedSetGuard: refused without --evaluation-run |
 | TEST-170 | The annotation guide defines filler and hesitation transcription, false starts and self-corrections, punctuation and casing, Japanese number representation and tokenization, Vietnamese orthography, English and technical term handling, unintelligible markers, overlap and speaker-unknown notation, timestamp precision, literal-versus-natural translation principles, and reviewer identity, version and adjudication | ADR-0012 | - | - | - | - | blocked_real_fixture | guide_version recorded in every annotation header |

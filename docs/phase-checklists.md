@@ -104,7 +104,7 @@ have not been made.
 | Phase | Title | Primary gates (Section 26) |
 |---|---|---|
 | 2 | Windows capture client | 4, 5 — **in progress**, see below |
-| 3 | Client UI and persistence shell | 14 |
+| 3 | Client UI and persistence shell | 14 — **in progress**, see below |
 | 4 | Server ingestion and orchestration | 2, 19 |
 | 5 | VAD and segmentation | 6 |
 | 6 | Whisper partial/final ASR | 7, 8 |
@@ -154,3 +154,44 @@ Design gates 4 and 5 settled in ADR-0013 and ADR-0014, approved 2026-09-08
 
 **Not in Phase 2, by design:** the PySide6 UI (Phase 3) and the WebSocket
 transport (Phase 4, when there is a server to talk to).
+
+---
+
+## Phase 3 — Client UI and persistence shell
+
+Design gate 14's remaining questions settled in ADR-0016, approved 2026-09-09
+(decisions D40, D41, D42).
+
+| # | Item | Evidence | Done |
+|---|---|---|---|
+| 3.1 | Persistence cadence, UI batching, log location | ADR-0016 | ✅ |
+| 3.2 | Log paths, sanitized from a validated session id | `client/paths.py` | ✅ |
+| 3.3 | Debug writer: own thread, bounded queue, flush per record | `client/persistence.py` | ✅ |
+| 3.4 | Live history projection on lifecycle-significant change | `client/persistence.py` | ✅ |
+| 3.5 | Compaction: temp write, validate, atomic rename | `client/persistence.py` | ✅ |
+| 3.6 | Recovery command | `tools/rebuild_history.py` | ✅ |
+| 3.7 | Explicit deletion with an audit trail | `tools/purge_meeting.py` | ✅ |
+| 3.8 | Timeline state, ordering, upsert by segment_id | `client/ui/timeline.py` | ✅ |
+| 3.9 | Update coalescing | `client/ui/updates.py` | ✅ |
+| 3.10 | PySide6 window | `client/ui/app.py` | ✅ |
+| 3.11 | Replay harness with provenance verification | `client/replay.py` | ✅ code only |
+| 3.12 | Category B conformance vectors | 145 new, 418 total | ✅ |
+| 3.13 | Category C replay tests | — | ☐ **blocked_real_fixture** |
+
+**Blocked, and reported rather than filled:** category C needs immutable traffic
+captured from an actual server run (Section 25.15 C). No server exists until
+Phase 4, so no real capture can exist. `tests/manifests/captures.yaml` is empty
+and `TestReplayIsBlocked` turns that into a visible skip. Inventing an exchange
+to make the suite green would be the fabricated evidence Section 22.3 forbids.
+
+**Two bugs the tests found during this phase:**
+
+- `TranslationStatus.NOT_APPLICABLE` is both terminal and the value every
+  segment carries from creation, so the first `is_history_worthy` returned True
+  for every partial and defeated D40 entirely.
+- `events_from` let pydantic's `ValidationError` escape, so a rebuild crashed on
+  the first malformed payload — failing at exactly the moment PERS-080 exists
+  for.
+
+**Still open:** the UI's retry-translation action (UI-110) needs a server to
+retry against, so it waits for Phase 4.
