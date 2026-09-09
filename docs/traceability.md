@@ -23,9 +23,9 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 199 |
-| implemented | 50 |
-| tested | 37 |
+| planned | 186 |
+| implemented | 51 |
+| tested | 49 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
 | blocked_real_fixture | 5 |
@@ -33,7 +33,7 @@ accepted_exception
 | accepted_exception | 0 |
 | **total** | **291** |
 
-199 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+186 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
@@ -267,19 +267,19 @@ accepted_exception
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| PERS-010 | `meeting_<session-id>_debug.jsonl` is the append-only authoritative event log | ADR-0011 | - | - | - | - | planned | wrapper record; payload is the wire event verbatim (D25) |
-| PERS-020 | The debug log includes session lifecycle, client and server status, audio gaps and acknowledgements, VAD events, partial revisions, final and corrected transcription, speaker revisions, language decisions and evidence, overlap intervals, ASR quality evidence, translation lifecycle, errors, warnings, latency metadata, and model/config/version identifiers | ADR-0011 | - | - | - | - | planned | record_kind wire_event \| client_local \| integrity_conflict |
-| PERS-030 | `meeting_<session-id>_history.jsonl` is a live projection carrying no authority; `meeting_<session-id>_history.final.jsonl` is the compacted deliverable | ADR-0004 | - | - | - | - | planned | three-file set decided; schema at the Phase 1 log gate |
-| PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | ADR-0009 | - | - | - | - | planned | - |
-| PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | ADR-0011 | - | - | - | - | planned | - |
-| PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | ADR-0011 | - | - | - | - | planned | write+flush per record; fsync at critical boundaries and on an interval (D29) |
-| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0011 | - | - | - | - | planned | rebuild is read, unwrap, fold with the same reducer the UI uses |
-| PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | ADR-0011 | - | - | - | - | planned | log_seq makes a truncated tail distinguishable from a clean close (D26) |
-| PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | ADR-0011 | - | - | - | - | planned | missing, duplicate and regressing log_seq are three distinct vectors |
-| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | ADR-0011 | protocol/ | - | - | - | implemented | session id validated against a uuid4 pattern before any path use |
-| PERS-110 | Raw audio persistence is disabled by default; in explicit diagnostic mode the log records path, sample count, format and SHA-256 | ADR-0011 | - | - | - | - | planned | - |
+| PERS-010 | `meeting_<session-id>_debug.jsonl` is the append-only authoritative event log | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | append-only, log_seq contiguous, payload verbatim |
+| PERS-020 | The debug log includes session lifecycle, client and server status, audio gaps and acknowledgements, VAD events, partial revisions, final and corrected transcription, speaker revisions, language decisions and evidence, overlap intervals, ASR quality evidence, translation lifecycle, errors, warnings, latency metadata, and model/config/version identifiers | ADR-0011 | client/persistence.py | - | - | - | implemented | record_kind separates wire events from client-local records |
+| PERS-030 | `meeting_<session-id>_history.jsonl` is a live projection carrying no authority; `meeting_<session-id>_history.final.jsonl` is the compacted deliverable | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | history written only on lifecycle-significant change |
+| PERS-040 | Compaction writes to a temporary file, validates every line and projection invariant, flushes, then atomically renames | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | temp write, per-line validation, atomic rename |
+| PERS-050 | Never embed raw PCM in JSONL; reference a separate audio file by path and SHA-256 | ADR-0011 | client/paths.py | - | - | - | implemented | raw audio path defined; writing it stays default-off |
+| PERS-060 | The writer is crash-tolerant and never leaves a malformed JSON line | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | flush per record; LF endings; no malformed line survives |
+| PERS-070 | A deterministic command rebuilds the history file from the debug event log | ADR-0004, ADR-0011, ADR-0016 | tools/rebuild_history.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | rebuild reproduces the live compaction byte for byte |
+| PERS-080 | Recovery ignores or quarantines an incomplete final JSONL line and validates event IDs and revisions | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | truncated tail and invalid payload quarantined with an address |
+| PERS-090 | Test truncated tail, duplicate and conflicting revision, invalid path, permission failure and disk-full behaviour with labelled negative vectors | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | truncated tail, malformed record, log_seq hole, invalid path, full queue |
+| PERS-100 | All files use UTF-8 without BOM and sanitized session-derived filenames | ADR-0004, ADR-0011, ADR-0016 | client/paths.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | uuid4 checked before the id reaches a path; UTF-8, LF |
+| PERS-110 | Raw audio persistence is disabled by default; in explicit diagnostic mode the log records path, sample count, format and SHA-256 | ADR-0011 | - | - | - | - | planned | diagnostic raw-audio mode not implemented; default-off is the default |
 | PERS-120 | Audio files, meeting logs and benchmark raw outputs are never committed to Git | - | .gitignore | - | - | .gitignore | implemented | - |
-| PERS-130 | The client debug writer failing stops the session safely | ADR-0004 | - | - | - | - | planned | - |
+| PERS-130 | The client debug writer failing stops the session safely | ADR-0004, ADR-0011, ADR-0016 | client/persistence.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | a full writer queue stops the session rather than dropping |
 
 ## OPS - deployment, operations, resources, process
 
@@ -346,13 +346,13 @@ accepted_exception
 | SEC-020 | Never expose an unauthenticated public WebSocket endpoint | - | - | - | - | - | planned | - |
 | SEC-030 | Never print or commit model access tokens, SSH secrets or environment credentials | - | .gitignore | - | - | .gitignore | implemented | no token has been printed or committed |
 | SEC-040 | Use environment variables or local secret files excluded by Git | - | .gitignore | - | - | .gitignore | implemented | - |
-| SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | ADR-0011 | - | - | - | - | planned | no automatic deletion; tools/purge_meeting.py plus an audit line (D28) |
-| SEC-060 | Sanitize filenames and session metadata | ADR-0011 | - | - | - | - | planned | - |
+| SEC-050 | Define retention and deletion behaviour for meeting logs and optional audio recordings | ADR-0004, ADR-0011, ADR-0016 | tools/purge_meeting.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | explicit deletion with an audit line; nothing automatic |
+| SEC-060 | Sanitize filenames and session metadata | ADR-0004, ADR-0011, ADR-0016 | client/paths.py | tests/conformance/test_persistence.py | negative_test_vector | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | traversal, slashes, uppercase and reserved names all refused |
 | SEC-070 | Impose maximum sizes on frames, events, strings, queues and sessions | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py; frame ceiling tested, others not yet |
 | SEC-080 | Validate all client and worker messages | - | - | - | - | - | planned | - |
 | SEC-090 | Treat transcription and translation as confidential meeting data | ADR-0011 | - | - | - | - | planned | - |
 | SEC-100 | Add no telemetry that sends meeting data externally | - | - | - | - | - | planned | - |
-| SEC-110 | Use safe file paths and atomic writes | ADR-0011 | - | - | - | - | planned | - |
+| SEC-110 | Use safe file paths and atomic writes | ADR-0011 | client/persistence.py | tests/conformance/test_persistence.py | - | tests/conformance/test_persistence.py, 338 passed, dev machine, 2026-09-09 | tested | atomic rename for compaction; paths validated before use |
 
 ## TEST - testing, fixtures, evaluation
 
