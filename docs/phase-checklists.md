@@ -103,7 +103,7 @@ have not been made.
 
 | Phase | Title | Primary gates (Section 26) |
 |---|---|---|
-| 2 | Windows capture client | 4, 5 |
+| 2 | Windows capture client | 4, 5 — **in progress**, see below |
 | 3 | Client UI and persistence shell | 14 |
 | 4 | Server ingestion and orchestration | 2, 19 |
 | 5 | VAD and segmentation | 6 |
@@ -115,3 +115,39 @@ have not been made.
 | 11 | End-to-end integration | — |
 | 12 | Benchmark and tuning | 15, 22 |
 | 13 | Packaging and operations | 16 |
+
+---
+
+## Phase 2 — Windows capture client
+
+Design gates 4 and 5 settled in ADR-0013 and ADR-0014, approved 2026-09-08
+(decisions D34-D38).
+
+| # | Item | Evidence | Done |
+|---|---|---|---|
+| 2.1 | Client concurrency model and buffer boundary | ADR-0013 | ✅ |
+| 2.2 | Device selection, resampler and framing | ADR-0014 | ✅ |
+| 2.3 | Device discovery, selection by name, format validation | `client/devices.py` | ✅ |
+| 2.4 | Stateful downmix and resample to canonical format | `client/resampler.py` | ✅ |
+| 2.5 | Bounded ring buffer and send retention | `client/ringbuffer.py` | ✅ |
+| 2.6 | Frame builder with timeline-preserving skip | `client/framing.py` | ✅ |
+| 2.7 | Capture lifecycle state machine | `client/lifecycle.py` | ✅ |
+| 2.8 | WASAPI loopback capture | `client/capture.py` | ✅ |
+| 2.9 | Idle endpoint detection | `client/idle.py` | ✅ measurement only; policy is an open gate |
+| 2.10 | Category B conformance vectors | 110 vectors in `tests/conformance/test_client_audio.py` | ✅ |
+| 2.11 | Self-check diagnostic and runbook | `tools/capture_selfcheck.py`, `docs/runbooks/client-capture-selfcheck.md` | ✅ |
+| 2.12 | Real capture with audio playing, on the user machine | — | ☐ **user action** |
+| 2.13 | Converter quality and frame duration benchmark | — | ☐ needs real captured audio |
+
+**Discovered during Phase 2, and open:**
+
+- A WASAPI loopback endpoint with nothing playing delivers **no callbacks at
+  all**, not silence. Measured on the dev machine: 0 callbacks over 3 s idle,
+  106 callbacks and 434,176 bytes over 2.26 s with playback. `client/idle.py`
+  measures the resulting uncovered media time; **what to do about it is an
+  unresolved design gate** and must be settled before Phase 3, because a long
+  idle stretch would otherwise leave every later `start_sample` early by its
+  duration.
+
+**Not in Phase 2, by design:** the PySide6 UI (Phase 3) and the WebSocket
+transport (Phase 4, when there is a server to talk to).

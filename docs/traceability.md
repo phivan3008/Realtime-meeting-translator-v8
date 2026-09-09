@@ -23,9 +23,9 @@ accepted_exception
 
 | Status | Count |
 |---|---|
-| planned | 217 |
-| implemented | 47 |
-| tested | 22 |
+| planned | 199 |
+| implemented | 54 |
+| tested | 33 |
 | test_script_ready | 0 |
 | blocked_environment | 0 |
 | blocked_real_fixture | 5 |
@@ -33,34 +33,34 @@ accepted_exception
 | accepted_exception | 0 |
 | **total** | **291** |
 
-217 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
+199 of 291 requirements are still `planned`. A phase cannot be declared complete while a requirement it claims to deliver is unmapped or falsely marked tested (TEST-250).
 
 ## AUD - audio capture and client runtime
 
 | ID | Requirement | ADR | Module | Test / script | Fixture / vector | Evidence | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| AUD-010 | Enumerate WASAPI output devices and loopback-capable devices | - | - | - | - | - | planned | - |
-| AUD-020 | Let the user select the capture device | - | - | - | - | - | planned | - |
-| AUD-030 | Capture output audio using PyAudioWPatch WASAPI loopback | - | - | - | - | - | planned | - |
-| AUD-040 | Validate sample format, channel count, sample rate and device availability | - | - | - | - | - | planned | - |
-| AUD-050 | Convert captured audio to mono PCM signed 16-bit little-endian at 16 kHz | - | - | - | - | - | planned | the real recording is already mono pcm_s16le 16 kHz, so fixture and wire format coincide |
-| AUD-060 | Use a streaming-quality resampler with persistent state across chunks | - | - | - | - | - | planned | - |
-| AUD-070 | Avoid repeated WAV headers in the stream | - | - | - | - | - | planned | - |
-| AUD-080 | Add monotonically increasing sequence numbers and monotonic capture timestamps | - | - | - | - | - | planned | - |
-| AUD-090 | Detect callback starvation, device removal, overrun, underrun and resampler failure | - | - | - | - | - | planned | - |
-| AUD-100 | Bounded ring buffer with an explicit overflow policy | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | overflow drops the oldest unsent frame and emits audio.gap (D22) |
-| AUD-110 | Never block the audio callback on network I/O, UI rendering, log writing or disk I/O | - | - | - | - | - | planned | - |
-| AUD-120 | Capture lifecycle: IDLE → CONNECTING → READY → CAPTURING → STOPPING → COMPLETED, with ERROR ↔ RECONNECTING | - | - | - | - | - | planned | - |
-| AUD-130 | Log every state transition with timestamp and reason code | - | - | - | - | - | planned | - |
+| AUD-010 | Enumerate WASAPI output devices and loopback-capable devices | ADR-0013, ADR-0014 | client/devices.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_enumeration_marks_the_default |
+| AUD-020 | Let the user select the capture device | ADR-0013, ADR-0014 | client/devices.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_a_preference_that_exists_is_honoured |
+| AUD-030 | Capture output audio using PyAudioWPatch WASAPI loopback | ADR-0013, ADR-0014 | client/capture.py | tools/capture_selfcheck.py, docs/runbooks/client-capture-selfcheck.md | - | - | implemented | capture opens and streams; an idle endpoint delivers no callbacks, so a pass needs audio playing - user machine runbook |
+| AUD-040 | Validate sample format, channel count, sample rate and device availability | ADR-0013, ADR-0014 | client/devices.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_unsupported_formats_are_refused_before_capture |
+| AUD-050 | Convert captured audio to mono PCM signed 16-bit little-endian at 16 kHz | ADR-0013, ADR-0014 | client/resampler.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_int16_round_trip_is_exact, downmix and rate tests |
+| AUD-060 | Use a streaming-quality resampler with persistent state across chunks | ADR-0013, ADR-0014 | client/resampler.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_state_persists_across_chunks |
+| AUD-070 | Avoid repeated WAV headers in the stream | ADR-0013, ADR-0014 | client/framing.py | - | - | - | implemented | raw PCM behind a binary header; no container |
+| AUD-080 | Add monotonically increasing sequence numbers and monotonic capture timestamps | ADR-0013, ADR-0014 | client/framing.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_frames_carry_increasing_sequence_and_contiguous_offsets |
+| AUD-090 | Detect callback starvation, device removal, overrun, underrun and resampler failure | ADR-0013, ADR-0014 | client/capture.py, client/idle.py | - | - | - | implemented | overflow, underflow, starvation and resampler failure counted; idle endpoint measured |
+| AUD-100 | Bounded ring buffer with an explicit overflow policy | ADR-0013, ADR-0014 | client/ringbuffer.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | overflow drops the oldest and reports device frames lost |
+| AUD-110 | Never block the audio callback on network I/O, UI rendering, log writing or disk I/O | ADR-0013, ADR-0014 | client/capture.py | - | - | - | implemented | the callback copies, counts and returns; nothing else |
+| AUD-120 | Capture lifecycle: IDLE → CONNECTING → READY → CAPTURING → STOPPING → COMPLETED, with ERROR ↔ RECONNECTING | ADR-0013, ADR-0014 | client/lifecycle.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | the Section 8.2 graph, table-driven and asserted |
+| AUD-130 | Log every state transition with timestamp and reason code | ADR-0013, ADR-0014 | client/lifecycle.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_every_transition_records_a_reason_and_both_clocks |
 | AUD-140 | Send heartbeat/ping messages | - | - | - | - | - | planned | - |
 | AUD-150 | Detect a dead connection | - | - | - | - | - | planned | - |
 | AUD-160 | Reconnect with bounded exponential backoff | - | - | - | - | - | planned | - |
-| AUD-170 | Preserve a bounded amount of unsent audio across reconnect | ADR-0009 | - | - | - | - | planned | retention size bounds how often resume hits the dropped-buffer branch; Phase 2 |
+| AUD-170 | Preserve a bounded amount of unsent audio across reconnect | ADR-0013, ADR-0014 | client/ringbuffer.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | SendRetention release and replay |
 | AUD-180 | Attempt session resume within a configurable retention window | ADR-0009 | - | - | - | - | planned | - |
-| AUD-190 | Report unrecoverable audio gaps clearly | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | a shortfall against resume_from_sample becomes an explicit audio.gap |
-| AUD-200 | Never silently reorder, duplicate or discard audio | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | discarding is permitted; discarding silently is not |
-| AUD-210 | Client/audio metrics: frame count, sequence gaps, ring-buffer overflow, callback delays, capture and resample drift, reconnect recovery and lost duration, CPU and memory, log writer integrity | - | - | - | - | - | planned | - |
-| AUD-220 | Select a correct WASAPI loopback device automatically on an arbitrary Windows user machine, given only Python and the project's dependencies | - | - | - | - | - | planned | - |
+| AUD-190 | Report unrecoverable audio gaps clearly | ADR-0013, ADR-0014 | client/framing.py | - | - | - | implemented | FrameBuilder.skip returns the span the caller reports |
+| AUD-200 | Never silently reorder, duplicate or discard audio | ADR-0013, ADR-0014 | client/ringbuffer.py | - | - | - | implemented | discarding is permitted; discarding silently is not |
+| AUD-210 | Client/audio metrics: frame count, sequence gaps, ring-buffer overflow, callback delays, capture and resample drift, reconnect recovery and lost duration, CPU and memory, log writer integrity | ADR-0013, ADR-0014 | client/capture.py, client/ringbuffer.py, client/resampler.py | - | - | - | implemented | counters exist; tools/capture_selfcheck.py renders them |
+| AUD-220 | Select a correct WASAPI loopback device automatically on an arbitrary Windows user machine, given only Python and the project's dependencies | ADR-0013, ADR-0014 | client/devices.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_no_preference_uses_the_system_default |
 
 ## UI - client user interface
 
@@ -94,7 +94,7 @@ accepted_exception
 | PROT-060 | `capability.updated` extension event, forced by degraded-mode capability state | ADR-0005 | protocol/ | - | - | - | implemented | protocol/events.py CapabilityUpdated |
 | PROT-070 | `session_unrecoverable` is a client-local persisted record, not a wire event | ADR-0005 | - | - | - | - | planned | client-local record, not a wire event |
 | PROT-080 | Wire audio is `pcm_s16le`, 16000 Hz, 1 channel, little-endian | ADR-0010 | protocol/ | - | - | - | implemented | protocol/limits.py |
-| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | protocol/ | - | - | - | implemented | frame duration is config-selected; benchmark pending |
+| PROT-090 | Frame duration is 20 ms or 40 ms, decided by benchmark | ADR-0010 | client/framing.py | - | - | - | implemented | 20 and 40 ms both implemented; 20 ms default |
 | PROT-100 | Binary frame header carries at minimum: protocol version, stream identifier, sequence number, monotonic capture timestamp, sample count, flags | ADR-0010 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_field_offsets_match_the_adr |
 | PROT-110 | Binary header schema, byte layout, integer sizes and endianness written as a specification and covered by real-capture serialization tests **before** server implementation | ADR-0010 | protocol/frame.py | tests/conformance/test_frame_codec.py | - | docs/protocol.md section 4.2 | blocked_real_fixture | layout covered by category B vectors; Section 9.2 real-capture serialization needs a Phase 4 server run |
 | PROT-120 | Backpressure defines maximum queue depth, acknowledgement cadence, client buffer limit, server overload response, reconnect retention duration, gap reporting, termination behaviour | ADR-0010 | protocol/ (Phase 1) | - | - | - | planned | cumulative acked_through_sample doubles as the backpressure channel (D21, D22) |
@@ -103,7 +103,7 @@ accepted_exception
 | PROT-150 | Time conversion is `floor(sample_offset * 1000 / 16000)` | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_samples_to_ms_floors |
 | PROT-160 | Floating-point seconds are never identity keys or ordering authorities | ADR-0008 | protocol/ | - | - | - | implemented | protocol/timeline.py works only in integers |
 | PROT-170 | Client monotonic, server monotonic and UTC times are observability fields only | ADR-0008 | protocol/ | - | - | - | implemented | capture_monotonic_ns is header metadata, never an ordering key |
-| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | protocol/ | tests/conformance/ | protocol_conformance_fixture, negative_test_vector | tests/conformance/, 102 passed, dev machine, 2026-09-08 | tested | test_a_gap_preserves_its_duration |
+| PROT-180 | Sequence gaps preserve their duration on the media timeline; the timeline is never compressed to hide missing audio | ADR-0008 | client/framing.py | tests/conformance/test_client_audio.py | protocol_conformance_fixture | tests/conformance/, 251 passed, dev machine, 2026-09-09 | tested | test_frames_after_a_skip_carry_the_shifted_offset |
 | PROT-190 | A reconnect continues the same sample timeline only on accepted resume; a non-resumed stream gets a new `stream_id` and an explicit discontinuity event | ADR-0009 | protocol/ (Phase 1) | - | - | - | planned | resume accepted continues the timeline; refused resume gets a new stream_id |
 | PROT-200 | The protocol ADR defines integer ranges, overflow handling and conversion rounding | ADR-0008 | protocol/ | - | - | - | implemented | protocol/timeline.py validate_sample_offset |
 | PROT-210 | `stream_id`, `utterance_id`, `segment_id` and `speaker_turn_id` are distinct and never conflated | ADR-0008 | protocol/ | - | - | - | implemented | protocol/identifiers.py, one allocator per kind |

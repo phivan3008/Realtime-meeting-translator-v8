@@ -1,0 +1,8 @@
+# Client dependency domain: PySide6 UI, WASAPI loopback capture, resampling,
+# WebSocket transport. ADR-0001 keeps this out of protocol/ and out of every
+# server worker domain.
+PySide6
+PyAudioWPatch
+samplerate
+numpy
+websockets

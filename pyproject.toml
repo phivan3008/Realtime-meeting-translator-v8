@@ -40,6 +40,18 @@ exclude = "(^\\.venv/|^data/)"
 # Third-party packages without bundled type information get an explicit
 # per-module exemption here rather than a blanket suppression (ADR-0003).
 
+[[tool.mypy.overrides]]
+# libsamplerate bindings ship no stubs. Wrapped behind the ResamplerBackend
+# protocol in client/resampler.py, so the untyped surface is one module wide.
+module = ["samplerate"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# PyAudioWPatch ships no stubs. The slice this project uses is declared as
+# the PyAudioLike protocol in client/devices.py.
+module = ["pyaudiowpatch"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
