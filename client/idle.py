@@ -13,10 +13,11 @@ for five minutes and produces nothing, the timeline does not advance, and
 everything after it carries a ``start_sample`` five minutes too early - the same
 class of failure PROT-180 forbids for gaps, arriving by a different route.
 
-This module **measures** the deficit. It does not decide what to do about it:
-filling never-produced audio is a different question from filling lost audio
-(ADR-0009 D15 covers the latter), and it needs a design gate rather than a
-default chosen here.
+This module measures the deficit and classifies it. ADR-0015 D39 decided what
+happens next: the client emits ``audio.idle`` carrying the span and advances its
+own frame cursor, and the **server** decides whether to materialise silence for
+model continuity. Nothing is fabricated on the wire - five minutes of idle costs
+one small event rather than 9.6 MB of zeros.
 """
 
 from __future__ import annotations
@@ -25,13 +26,21 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from protocol.enums import IdleClass
 from protocol.limits import CANONICAL_SAMPLE_RATE_HZ
 
 #: How long an endpoint may deliver nothing before it is called idle rather than
-#: merely between callbacks. A device buffer at 48 kHz with 1024-frame callbacks
-#: fires roughly every 21 ms, so this is two orders of magnitude of headroom.
-#: `benchmark_required` like every other timing constant.
+#: merely between callbacks. Measured on the user machine: 468 callbacks in
+#: 10.02 s is one roughly every 21 ms, so this is two orders of magnitude of
+#: headroom. `benchmark_required` like every other timing constant.
 DEFAULT_IDLE_THRESHOLD_S = 0.5
+
+#: ADR-0015 D39 duration-class boundaries. Both are `benchmark_required` and
+#: are decided at the Phase 5 gate, alongside the VAD parameters they interact
+#: with. The values here are placeholders that make the classifier runnable, and
+#: configuration validation refuses to start without real ones (OPS-600).
+DEFAULT_LONG_IDLE_S = 3.0
+DEFAULT_VERY_LONG_IDLE_S = 30.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,10 +51,31 @@ class IdlePeriod:
     ended_monotonic: float
     #: How many canonical samples of media time passed with no audio to fill it.
     canonical_samples: int
+    idle_class: IdleClass
 
     @property
     def duration_s(self) -> float:
         return self.ended_monotonic - self.started_monotonic
+
+
+def classify_idle(
+    duration_s: float,
+    *,
+    long_threshold_s: float = DEFAULT_LONG_IDLE_S,
+    very_long_threshold_s: float = DEFAULT_VERY_LONG_IDLE_S,
+) -> IdleClass:
+    """Assign an idle span to an ADR-0015 duration class.
+
+    Boundaries are half-open upward, matching the gap classes of Section 25.8, so
+    a span exactly at a threshold takes the lighter treatment. The asymmetry is
+    deliberate: escalating on an exact boundary would make the class depend on
+    floating-point rounding of a wall-clock measurement.
+    """
+    if duration_s > very_long_threshold_s:
+        return IdleClass.VERY_LONG
+    if duration_s > long_threshold_s:
+        return IdleClass.LONG
+    return IdleClass.SHORT
 
 
 @dataclass(slots=True)
@@ -61,6 +91,8 @@ class IdleTracker:
     """
 
     idle_threshold_s: float = DEFAULT_IDLE_THRESHOLD_S
+    long_threshold_s: float = DEFAULT_LONG_IDLE_S
+    very_long_threshold_s: float = DEFAULT_VERY_LONG_IDLE_S
     clock: Callable[[], float] = time.monotonic
 
     _last_audio_at: float | None = field(default=None, init=False)
@@ -89,14 +121,25 @@ class IdleTracker:
         if self._idle_since is None:
             return None
 
-        period = IdlePeriod(
-            started_monotonic=self._idle_since,
-            ended_monotonic=now,
-            canonical_samples=int((now - self._idle_since) * CANONICAL_SAMPLE_RATE_HZ),
-        )
-        self._idle_since = None
+        period = self._close(now)
         self.periods.append(period)
         return period
+
+    def _close(self, now: float) -> IdlePeriod:
+        assert self._idle_since is not None
+        started = self._idle_since
+        duration = now - started
+        self._idle_since = None
+        return IdlePeriod(
+            started_monotonic=started,
+            ended_monotonic=now,
+            canonical_samples=int(duration * CANONICAL_SAMPLE_RATE_HZ),
+            idle_class=classify_idle(
+                duration,
+                long_threshold_s=self.long_threshold_s,
+                very_long_threshold_s=self.very_long_threshold_s,
+            ),
+        )
 
     def poll(self) -> bool:
         """Check whether the endpoint has gone idle. Returns True if it is idle now.
@@ -142,12 +185,6 @@ class IdleTracker:
         """Close an open idle period at end of capture."""
         if self._idle_since is None:
             return None
-        now = self.clock()
-        period = IdlePeriod(
-            started_monotonic=self._idle_since,
-            ended_monotonic=now,
-            canonical_samples=int((now - self._idle_since) * CANONICAL_SAMPLE_RATE_HZ),
-        )
-        self._idle_since = None
+        period = self._close(self.clock())
         self.periods.append(period)
         return period

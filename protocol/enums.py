@@ -141,6 +141,31 @@ class GapClass(StrEnum):
     LARGE = "large"
 
 
+class IdleClass(StrEnum):
+    """ADR-0015 D39. How long a capture endpoint delivered nothing.
+
+    Deliberately separate from :class:`GapClass`. A gap means audio was *lost*,
+    which is why Section 25.8 marks medium and large gaps ``truncated_by_gap``
+    and tightens the ASR acceptance check - lost audio may have cut through
+    speech. An idle endpoint means there was definitively no sound, so applying
+    the gap treatment would degrade a transcript in response to nothing having
+    happened.
+    """
+
+    SHORT = "short"
+    LONG = "long"
+    VERY_LONG = "very_long"
+
+    @property
+    def resets_asr_context(self) -> bool:
+        """Section 13.4 and ASR-200 already reset context after a long silence."""
+        return self in (IdleClass.LONG, IdleClass.VERY_LONG)
+
+    @property
+    def starts_new_stream(self) -> bool:
+        return self is IdleClass.VERY_LONG
+
+
 class SessionOutcome(StrEnum):
     """ADR-0009 D19."""
 

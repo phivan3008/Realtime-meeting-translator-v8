@@ -211,6 +211,28 @@ able to send it would not be in the state it describes.
 |---|---|---|
 | `audio.ack` | server → client | `acked_through_sample`, `queue_depth`, `overload` |
 | `audio.gap` | server → client | `expected_sequence`, `received_sequence`, `start_sample`, `end_sample`, `missing_samples`, `gap_class`, `from_client_overflow` |
+| `audio.idle` | client → server | `start_sample`, `end_sample`, `idle_samples`, `idle_class`, `detected_by` |
+
+**`audio.idle` is not `audio.gap`, and the distinction is load-bearing.** A gap
+means audio was *lost*, which is why Section 25.8 marks medium and large gaps
+`truncated_by_gap` and tightens the ASR acceptance check: lost audio may have cut
+through speech. An idle endpoint means there was *definitively no sound* —
+a WASAPI loopback endpoint with nothing playing delivers no callbacks at all
+rather than delivering silence (ADR-0015 D39). Conflating them would label clean
+silence as truncated and degrade a transcript in response to nothing having
+happened.
+
+Idle duration classes, with thresholds `benchmark_required`:
+
+| Class | Timeline | Utterance | ASR context | Stream |
+|---|---|---|---|---|
+| `short` | advances | VAD closes it normally | unchanged | unchanged |
+| `long` | advances | closed | **reset** (Section 13.4 already requires this after a long silence) | unchanged |
+| `very_long` | advances | closed | reset | new `stream_id` plus discontinuity |
+
+`detected_by` is `client_wall_clock` and is stated explicitly because this is the
+one place the client uses wall time to make a media-timeline claim. A sample
+counter cannot answer "how much time passed while nothing arrived".
 
 ### 6.3 Segmentation and transcription
 

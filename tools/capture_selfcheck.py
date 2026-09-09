@@ -81,6 +81,16 @@ class Report:
         return int(self.device_frames * CANONICAL_SAMPLE_RATE_HZ / self.device.sample_rate_hz)
 
     @property
+    def canonical_shortfall(self) -> int:
+        """Samples the conversion did not produce, after flushing.
+
+        A few samples are normal at a chunk boundary. A growing figure would mean
+        audio is being lost in conversion, which is why it is reported rather
+        than absorbed.
+        """
+        return self.expected_canonical_samples - self.canonical_samples
+
+    @property
     def captured_anything(self) -> bool:
         """Whether the endpoint delivered any audio at all.
 
@@ -121,6 +131,7 @@ def render(report: Report) -> str:
         f"  canonical samples       {report.canonical_samples:,} "
         f"({report.canonical_samples / CANONICAL_SAMPLE_RATE_HZ:.2f} s)",
         f"  expected                {report.expected_canonical_samples:,}",
+        f"  shortfall               {report.canonical_shortfall:,} samples",
         f"  resampler failures      {report.resampler_failures}",
         f"  clipped samples         {report.clipped_samples:,}",
         "",
@@ -215,6 +226,16 @@ def run(
                 converted = converter.convert(chunk)
                 canonical.extend(converted)
                 for frame in builder.push(converted):
+                    sequences.append(frame.header.sequence)
+                    offsets.append((frame.start_sample, frame.header.sample_count))
+
+            # Drain the converter's filter state. Without this the report is
+            # short by the converter's latency - about 46 samples at sinc_medium
+            # on a 48 kHz source, which looks like a discrepancy and is not one.
+            tail = converter.flush()
+            if tail:
+                canonical.extend(tail)
+                for frame in builder.push(tail):
                     sequences.append(frame.header.sequence)
                     offsets.append((frame.start_sample, frame.header.sample_count))
 

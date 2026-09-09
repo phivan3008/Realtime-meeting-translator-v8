@@ -133,21 +133,24 @@ Design gates 4 and 5 settled in ADR-0013 and ADR-0014, approved 2026-09-08
 | 2.6 | Frame builder with timeline-preserving skip | `client/framing.py` | ✅ |
 | 2.7 | Capture lifecycle state machine | `client/lifecycle.py` | ✅ |
 | 2.8 | WASAPI loopback capture | `client/capture.py` | ✅ |
-| 2.9 | Idle endpoint detection | `client/idle.py` | ✅ measurement only; policy is an open gate |
+| 2.9 | Idle endpoint detection and policy | `client/idle.py`, ADR-0015, `audio.idle` | ✅ |
 | 2.10 | Category B conformance vectors | 110 vectors in `tests/conformance/test_client_audio.py` | ✅ |
 | 2.11 | Self-check diagnostic and runbook | `tools/capture_selfcheck.py`, `docs/runbooks/client-capture-selfcheck.md` | ✅ |
-| 2.12 | Real capture with audio playing, on the user machine | — | ☐ **user action** |
+| 2.12 | Real capture with audio playing, on the user machine | self-check exit 0, 468 callbacks, 0 drops, offsets exact | ✅ 2026-09-09 |
 | 2.13 | Converter quality and frame duration benchmark | — | ☐ needs real captured audio |
 
-**Discovered during Phase 2, and open:**
+**Discovered during Phase 2, and closed:**
 
 - A WASAPI loopback endpoint with nothing playing delivers **no callbacks at
   all**, not silence. Measured on the dev machine: 0 callbacks over 3 s idle,
-  106 callbacks and 434,176 bytes over 2.26 s with playback. `client/idle.py`
-  measures the resulting uncovered media time; **what to do about it is an
-  unresolved design gate** and must be settled before Phase 3, because a long
-  idle stretch would otherwise leave every later `start_sample` early by its
-  duration.
+  106 callbacks and 434,176 bytes over 2.26 s with playback. Resolved by
+  ADR-0015 D39: the client emits `audio.idle` and advances its cursor; the
+  server decides whether to materialise silence. Deliberately **not** reusing
+  `audio.gap`, because a gap means audio was lost and tightens the ASR
+  acceptance check, while an idle endpoint means there was no sound.
+- The user machine is a **Japanese-locale Windows VM** with non-ASCII device
+  names. D38 persists the device selection by name, so that path now has
+  coverage.
 
 **Not in Phase 2, by design:** the PySide6 UI (Phase 3) and the WebSocket
 transport (Phase 4, when there is a server to talk to).

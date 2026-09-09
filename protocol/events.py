@@ -22,6 +22,7 @@ from protocol.enums import (
     Capability,
     CapabilityState,
     GapClass,
+    IdleClass,
     LanguageCode,
     LanguageStatus,
     SegmentOperation,
@@ -247,6 +248,30 @@ class AudioGap(Envelope):
     #: by the network (ADR-0010 D22). Downstream policy is identical; the
     #: distinction exists so the cause is diagnosable.
     from_client_overflow: bool = False
+
+
+class AudioIdle(Envelope):
+    """ADR-0015 D39. The endpoint produced nothing for a measurable span.
+
+    **Not an `audio.gap`.** A gap means audio was lost and may have cut through
+    speech; this means there was definitively no sound. Reusing the gap event
+    would mark clean silence ``truncated_by_gap`` and tighten the ASR acceptance
+    gate for no reason.
+
+    ``detected_by`` is explicit because this is the single place the client uses
+    wall time to make a statement about the media timeline. Section 25.1 keeps
+    the sample offset as the only media authority, and a sample counter cannot
+    answer "how much time passed while nothing arrived" - a counter that never
+    advances looks the same after a second and after an hour.
+    """
+
+    event_type: Literal["audio.idle"] = "audio.idle"
+    stream_id: Identifier
+    start_sample: SampleOffset
+    end_sample: SampleOffset
+    idle_samples: int = Field(ge=0)
+    idle_class: IdleClass
+    detected_by: Literal["client_wall_clock"] = "client_wall_clock"
 
 
 # --------------------------------------------------------------------------
@@ -483,6 +508,7 @@ EVENT_MODELS: dict[str, type[Envelope]] = {
     "session.summary": SessionSummary,
     "audio.ack": AudioAck,
     "audio.gap": AudioGap,
+    "audio.idle": AudioIdle,
     "vad.speech_started": VadSpeechStarted,
     "vad.speech_ended": VadSpeechEnded,
     "transcript.partial": TranscriptPartial,

@@ -38,7 +38,7 @@ from client.framing import (
     FrameBuilder,
     samples_per_frame,
 )
-from client.idle import IdleTracker
+from client.idle import IdleTracker, classify_idle
 from client.lifecycle import (
     ALLOWED_TRANSITIONS,
     CaptureLifecycle,
@@ -54,8 +54,11 @@ from client.resampler import (
     pcm16_to_float32,
 )
 from client.ringbuffer import CaptureRing, SendRetention
+from protocol.enums import IdleClass, RejectionReason
+from protocol.events import EVENT_MODELS, AudioIdle
 from protocol.frame import FrameFlags, decode_frame
-from protocol.limits import BYTES_PER_SAMPLE, CANONICAL_SAMPLE_RATE_HZ
+from protocol.limits import BYTES_PER_SAMPLE, CANONICAL_SAMPLE_RATE_HZ, MAX_IDENTIFIER_CHARS
+from protocol.projection import SessionProjection
 
 pytestmark = pytest.mark.conformance
 
@@ -802,3 +805,190 @@ class TestIdleTracker:
 
     def test_polling_before_start_is_harmless(self) -> None:
         assert not IdleTracker().poll()
+
+
+class TestIdleClassification:
+    """ADR-0015 D39 duration classes."""
+
+    @pytest.mark.parametrize(
+        ("duration_s", "expected"),
+        [
+            (0.0, IdleClass.SHORT),
+            (1.0, IdleClass.SHORT),
+            (3.0, IdleClass.SHORT),
+            (3.001, IdleClass.LONG),
+            (29.0, IdleClass.LONG),
+            (30.0, IdleClass.LONG),
+            (30.001, IdleClass.VERY_LONG),
+            (600.0, IdleClass.VERY_LONG),
+        ],
+    )
+    def test_boundaries_are_half_open_upward(self, duration_s: float, expected: IdleClass) -> None:
+        """A span exactly at a threshold takes the lighter treatment.
+
+        Escalating on an exact boundary would make the class depend on
+        floating-point rounding of a wall-clock measurement.
+        """
+        assert classify_idle(duration_s) is expected
+
+    def test_long_and_very_long_reset_asr_context(self) -> None:
+        """Section 13.4 and ASR-200 already reset context after a long silence."""
+        assert not IdleClass.SHORT.resets_asr_context
+        assert IdleClass.LONG.resets_asr_context
+        assert IdleClass.VERY_LONG.resets_asr_context
+
+    def test_only_very_long_starts_a_new_stream(self) -> None:
+        assert not IdleClass.SHORT.starts_new_stream
+        assert not IdleClass.LONG.starts_new_stream
+        assert IdleClass.VERY_LONG.starts_new_stream
+
+    def test_a_tracked_period_carries_its_class(self) -> None:
+        tracker = IdleTracker(
+            idle_threshold_s=0.5,
+            long_threshold_s=3.0,
+            very_long_threshold_s=30.0,
+            clock=self._replay([0.0, 5.0, 10.0]),
+        )
+        tracker.start()
+        tracker.poll()
+
+        period = tracker.note_audio(device_frames=480)
+
+        assert period is not None
+        assert period.idle_class is IdleClass.LONG
+
+    @staticmethod
+    def _replay(ticks: list[float]) -> Callable[[], float]:
+        stream = iter(ticks)
+        last = ticks[-1]
+
+        def read() -> float:
+            nonlocal last
+            with contextlib.suppress(StopIteration):
+                last = next(stream)
+            return last
+
+        return read
+
+
+class TestAudioIdleEvent:
+    """The event must stay distinct from `audio.gap` (ADR-0015 D39)."""
+
+    def _idle(self, **overrides: object) -> AudioIdle:
+        fields: dict[str, object] = {
+            "session_id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "event_id": "00000000-0000-4000-8000-000000000001",
+            "sent_at_utc": "2026-09-09T07:41:22.481Z",
+            "stream_id": "stream-0001",
+            "start_sample": 26_320_000,
+            "end_sample": 31_120_000,
+            "idle_samples": 4_800_000,
+            "idle_class": IdleClass.LONG,
+        }
+        fields.update(overrides)
+        return AudioIdle(**fields)  # type: ignore[arg-type]
+
+    def test_it_is_a_separate_event_type(self) -> None:
+        """Reusing audio.gap would mark clean silence `truncated_by_gap` and
+        tighten the ASR acceptance gate for no reason."""
+        assert EVENT_MODELS["audio.idle"] is AudioIdle
+        assert EVENT_MODELS["audio.gap"] is not AudioIdle
+
+    def test_it_carries_the_span_and_the_class(self) -> None:
+        event = self._idle()
+        assert event.end_sample - event.start_sample == event.idle_samples
+        assert event.idle_class is IdleClass.LONG
+
+    def test_the_detection_mechanism_is_named_in_the_event(self) -> None:
+        """This is the one place the client uses wall time to make a
+        media-timeline statement, so it says so."""
+        assert self._idle().detected_by == "client_wall_clock"
+
+    def test_the_projection_does_not_treat_it_as_segment_state(self) -> None:
+        """It advances the timeline; it does not touch any segment."""
+        state = SessionProjection(session_id="3f2504e0-4f89-41d3-9a0c-0305e82c3301")
+        result = state.apply(self._idle())
+
+        assert not result.applied
+        assert result.reason is RejectionReason.NOT_APPLICABLE
+        assert state.segments == {}
+
+
+class TestNonAsciiDeviceNames:
+    """Real device names from the user machine are Japanese.
+
+    Observed 2026-09-09 on a Japanese-locale Windows VM:
+    `スピーカー (VMware Virtual Audio (DevTap)) [Loopback]`. D38 persists the
+    selection **by name**, so a non-ASCII name has to survive being written to
+    configuration, read back, and compared - and it has to fit the identifier
+    length limit, which counts characters rather than bytes.
+    """
+
+    JAPANESE_NAME = "スピーカー (VMware Virtual Audio (DevTap)) [Loopback]"
+    TERADICI_NAME = "スピーカー (Teradici Virtual Audio Driver) [Loopback]"
+
+    def _audio(self) -> FakeAudio:
+        return FakeAudio(
+            [
+                device_info(16, self.TERADICI_NAME),
+                device_info(17, self.JAPANESE_NAME),
+            ],
+            default_index=17,
+        )
+
+    def test_a_japanese_device_name_resolves(self) -> None:
+        selection = select_device(self._audio(), preferred_name=self.TERADICI_NAME)
+
+        assert selection.device.index == 16
+        assert selection.device.name == self.TERADICI_NAME
+        assert not selection.fell_back
+
+    def test_the_default_is_found_among_non_ascii_names(self) -> None:
+        selection = select_device(self._audio())
+
+        assert selection.device.index == 17
+        assert selection.device.is_system_default
+
+    def test_a_non_ascii_name_survives_a_utf8_round_trip(self) -> None:
+        """Configuration is written as UTF-8; a name that does not round-trip
+        would silently become a device that no longer matches."""
+        encoded = self.JAPANESE_NAME.encode("utf-8")
+        assert encoded.decode("utf-8") == self.JAPANESE_NAME
+        assert len(encoded) > len(self.JAPANESE_NAME), "the name is genuinely multi-byte"
+
+    def test_the_fallback_message_carries_the_name_intact(self) -> None:
+        selection = select_device(self._audio(), preferred_name="存在しないデバイス")
+
+        message = selection.fallback_message
+        assert message is not None
+        assert "存在しないデバイス" in message
+        assert self.JAPANESE_NAME in message
+
+    def test_character_and_byte_lengths_differ(self) -> None:
+        """Any length check on a device name must say which unit it uses.
+
+        The real name is 48 characters and 58 bytes. A name that fits a
+        character budget can exceed the same number in bytes, so a limit written
+        against one unit and applied to the other is a limit that behaves
+        differently in Japan than it does in California.
+        """
+        assert len(self.JAPANESE_NAME.encode("utf-8")) > len(self.JAPANESE_NAME)
+
+        all_japanese = "ス" * MAX_IDENTIFIER_CHARS
+        assert len(all_japanese) == MAX_IDENTIFIER_CHARS
+        assert len(all_japanese.encode("utf-8")) == 3 * MAX_IDENTIFIER_CHARS
+
+    def test_a_device_name_is_client_local_not_a_wire_identifier(self) -> None:
+        """SEC-070 bounds wire identifiers, and pydantic counts characters.
+
+        A device name never crosses the wire - it lives in client configuration -
+        so it is not bound by that limit at all. Asserted so nobody later applies
+        the wire constraint to a field that is not one.
+        """
+        assert len(self.JAPANESE_NAME) <= MAX_IDENTIFIER_CHARS, "true today, not a contract"
+
+    def test_describe_renders_without_mangling(self) -> None:
+        device = LoopbackDevice(
+            index=17, name=self.JAPANESE_NAME, sample_rate_hz=48_000, channels=2
+        )
+        assert self.JAPANESE_NAME in device.describe()

@@ -5,7 +5,7 @@ from a command whose output is reproduced below. Values marked `UNKNOWN` are
 genuinely not yet known and must not be guessed
 (`requirements.md` Section 7, `CLAUDE.md` Section 5).
 
-Last updated: 2026-09-08, Phase 0 (second pass, after the follow-up pod inspection).
+Last updated: 2026-09-09, after the Phase 2 capture self-check on the user machine.
 
 ---
 
@@ -16,7 +16,7 @@ There are three, and they have different roles.
 | Machine | Role | Gets code by |
 |---|---|---|
 | **dev machine** | Windows 11. All code is written here. Client tests that need no real device audio and no real recording run here. | this Git working copy |
-| **user machine** | Windows. Holds the real meeting recording and real audio devices. Runs client tests that need WASAPI loopback. | downloading a branch archive from GitHub — **not** a Git clone |
+| **user machine** | Windows **virtual desktop** (VMware + Teradici PCoIP), Japanese locale. Holds the real meeting recording and the real audio path. Runs client tests that need WASAPI loopback. | downloading a branch archive from GitHub — **not** a Git clone |
 | **H100 pod** | Ubuntu 22.04. All GPU work. | copy-paste through the VS Code SSH UI — **not** a Git clone |
 
 The consequence for every runbook: instructions must work from an extracted
@@ -60,6 +60,66 @@ the directory is a working copy.
   real meeting still belongs on the user machine.
 - The real meeting recording is present and hash-verified. See
   `docs/test-data.md`.
+
+---
+
+## 2a. User machine (Windows VM) — verified 2026-09-09
+
+Measured by `tools/capture_selfcheck.py` on the branch
+`phase/02-windows-capture-client`.
+
+| Property | Value |
+|---|---|
+| Kind | Virtual desktop, not physical hardware |
+| Audio endpoints | `スピーカー (VMware Virtual Audio (DevTap)) [Loopback]` — system default; `スピーカー (Teradici Virtual Audio Driver) [Loopback]` |
+| Endpoint format | 48000 Hz, 2 channels — same as the dev machine |
+| Windows locale | Japanese; device names are non-ASCII |
+| Working directory | `D:\workspace\VSCode\Realtime-meeting-translator-v8` |
+
+Self-check over 10 s with the real meeting recording playing:
+
+```text
+callbacks               468
+device frames           479,232 (9.98 s)
+PortAudio overflows     0
+ring frames dropped     0
+ring peak occupancy     12,288 bytes
+canonical samples       159,698 (expected 159,744)
+resampler failures      0
+clipped samples         0
+frames emitted          499
+sequence contiguous     True
+sample offsets exact    True
+idle periods            0
+peak 0.663208   rms 0.068144
+exit code               0
+```
+
+Three things this establishes, and one it corrected.
+
+**Established.** The capture path works on a virtualised audio stack; the
+conversion produced 9.98 s of canonical audio from 9.98 s of device audio; and
+the framing produced a contiguous sequence with exact sample offsets over 499
+frames. Ring peak occupancy of 12,288 bytes against a 30-second capacity means
+the consumer never came close to falling behind.
+
+**Corrected.** The 46-sample difference between 159,698 and 159,744 was the
+converter's filter latency, which the self-check was not draining.
+`tools/capture_selfcheck.py` now flushes the converter and reports the shortfall
+as its own line, so a genuine loss would be distinguishable from a normal
+boundary effect rather than looking like the same small discrepancy.
+
+**Consequences for the design.**
+
+- **Device names are non-ASCII.** ADR-0014 D38 persists the capture device
+  selection by name. A Japanese name has to survive being written to
+  configuration, read back and compared; `tests/conformance/test_client_audio.py`
+  now covers that, including that character and byte lengths differ so any
+  length check must state its unit.
+- **The audio path is virtualised twice over** (VMware device tap, Teradici
+  remote desktop). Latency measurements taken here include both layers and are
+  not comparable with figures from physical hardware. Any Section 23.6 latency
+  figure measured on this machine must say so.
 
 ---
 
@@ -242,6 +302,7 @@ Two things to carry forward:
 | U13 | Whether the pre-converted `Systran/faster-whisper-large-v3` is used, or `openai/whisper-large-v3` is converted in-project | Phase 6 design gate | Phase 6 |
 | U14 | Where the recording lands on the pod, and its re-verified hash there | copy through the VS Code SSH UI, then `tools/hash_file.py --expect-sha256` | first server gate that needs real audio |
 | U11 | Whether the SSH tunnel to the pod is already established by VS Code port forwarding, and on which local port | user confirmation | Phase 11 end-to-end |
+| U15 | Whether the Teradici/VMware audio stack adds measurable latency over a physical endpoint | compare against a physical machine, if one is available | Section 23.6 latency figures |
 | U12 | Whether ffmpeg may be installed on the dev machine, or clips are cut in pure Python | Phase 1 tooling decision | fixture creation |
 
 ---
